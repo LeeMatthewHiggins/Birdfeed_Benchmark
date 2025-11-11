@@ -1,0 +1,26 @@
+name: benchmark
+description: Rendering performance benchmark tool
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  cupertino_icons: ^1.0.8
+  dentity: ^1.6.0
+  desktop_drop: ^0.4.4
+  flutter:
+    sdk: flutter
+  image: ^4.0.0
+  rive: 0.14.0-dev.13
+  rive_native: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^7.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,9 @@
+name: birdfeed_benchmark
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.0
+
+dev_dependencies:
+  melos: ^6.2.0
+  very_good_analysis: ^7.0.0

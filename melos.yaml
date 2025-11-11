@@ -1,0 +1,41 @@
+name: birdfeed_benchmark
+
+packages:
+  - benchmark
+  - packages/**
+
+command:
+  bootstrap:
+    environment:
+      sdk: ^3.5.0
+    runPubGetInParallel: true
+
+  version:
+    linkToCommits: false
+    workspaceChangelog: false
+
+scripts:
+  analyze:
+    run: dart analyze --fatal-infos
+    description: Run Dart analyzer in all packages
+
+  format:
+    run: dart format . --set-exit-if-changed
+    description: Format all Dart files
+
+  format:fix:
+    run: dart format . --output=write
+    description: Format and fix all Dart files
+
+  fix:
+    run: dart fix --apply
+    description: Apply Dart fixes in all packages
+
+  test:
+    run: flutter test --coverage
+    description: Run tests in all packages
+    dirExists: test
+
+  clean:
+    run: flutter clean
+    description: Clean all packages
