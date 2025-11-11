@@ -16,3 +16,12 @@ build/
 *.log
 .fvm/
 coverage/
+
+doc/api/
+.env*
+
+*.dart.js
+*.info.json
+*.js_
+*.js.deps
+*.js.map
