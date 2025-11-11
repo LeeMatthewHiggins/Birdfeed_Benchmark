@@ -1,0 +1,42 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: |
+          cd benchmark
+          flutter pub get
+
+      - name: Build web
+        run: |
+          cd benchmark
+          flutter build web --release --base-href "/Birdfeed_Benchmark/"
+
+      - name: Copy to docs
+        run: |
+          rm -rf docs
+          cp -r benchmark/build/web docs
+          touch docs/.nojekyll
+
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add docs
+          git diff --staged --quiet || git commit -m "Deploy: Update GitHub Pages build"
+          git push
