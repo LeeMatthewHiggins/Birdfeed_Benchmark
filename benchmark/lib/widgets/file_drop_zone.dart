@@ -1,4 +1,5 @@
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 class FileDropZone extends StatefulWidget {
@@ -31,18 +32,22 @@ class _FileDropZoneState extends State<FileDropZone> {
       onDragEntered: (_) => setState(() => _isDragging = true),
       onDragExited: (_) => setState(() => _isDragging = false),
       onDragDone: _handleDrop,
-      child: Container(
-        height: _dropZoneHeight,
-        decoration: BoxDecoration(
-          color: _getBackgroundColor(),
-          border: Border.all(
-            color: _getBorderColor(),
-            width: 2,
+      child: InkWell(
+        onTap: _handleFileSelection,
+        borderRadius: BorderRadius.circular(_borderRadius),
+        child: Container(
+          height: _dropZoneHeight,
+          decoration: BoxDecoration(
+            color: _getBackgroundColor(),
+            border: Border.all(
+              color: _getBorderColor(),
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(_borderRadius),
           ),
-          borderRadius: BorderRadius.circular(_borderRadius),
-        ),
-        child: Center(
-          child: _buildContent(),
+          child: Center(
+            child: _buildContent(),
+          ),
         ),
       ),
     );
@@ -102,6 +107,11 @@ class _FileDropZoneState extends State<FileDropZone> {
         Text(
           'Drag and drop a ${_formatExtensions()} file here',
           style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'or click to browse',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
     );
@@ -183,5 +193,61 @@ class _FileDropZoneState extends State<FileDropZone> {
   bool _isValidFile(String fileName) {
     final lowerName = fileName.toLowerCase();
     return widget.allowedExtensions.any(lowerName.endsWith);
+  }
+
+  Future<void> _handleFileSelection() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions:
+            widget.allowedExtensions.map((e) => e.replaceAll('.', '')).toList(),
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+
+      final file = result.files.first;
+      final fileName = file.name;
+      final bytes = file.bytes;
+
+      if (bytes == null) {
+        setState(() {
+          _errorMessage = 'Unable to read file';
+        });
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      final success = await widget.onFileDropped(bytes, fileName);
+
+      if (!mounted) return;
+
+      if (success) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load file';
+        });
+      }
+    } on Exception {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Error selecting file';
+      });
+    }
   }
 }
