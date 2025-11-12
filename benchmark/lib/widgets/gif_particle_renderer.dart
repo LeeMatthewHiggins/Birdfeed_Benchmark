@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/ecs/components/gif_content_component.dart';
+import 'package:benchmark/services/fps_tracker.dart';
 import 'package:benchmark/widgets/checkerboard_background.dart';
 import 'package:dentity/dentity.dart';
 
@@ -9,12 +10,14 @@ class GifParticleRenderer extends StatefulWidget {
     required this.instanceCount,
     required this.world,
     required this.createGifContent,
+    required this.fpsTracker,
     super.key,
   });
 
   final int instanceCount;
   final BenchmarkWorld world;
   final GifContentComponent? Function() createGifContent;
+  final FpsTracker fpsTracker;
 
   @override
   State<GifParticleRenderer> createState() => _GifParticleRendererState();
@@ -130,6 +133,7 @@ class _GifParticleRendererState extends State<GifParticleRenderer>
                   entities: _entities,
                   instanceSize: _instanceSize,
                   getDeltaTime: _getDeltaTime,
+                  fpsTracker: widget.fpsTracker,
                   repaint: _animationController,
                 ),
                 child: Container(),
@@ -148,6 +152,7 @@ class _GifParticlePainter extends CustomPainter {
     required this.entities,
     required this.instanceSize,
     required this.getDeltaTime,
+    required this.fpsTracker,
     required Listenable repaint,
   }) : super(repaint: repaint);
 
@@ -155,6 +160,7 @@ class _GifParticlePainter extends CustomPainter {
   final List<Entity> entities;
   final double instanceSize;
   final double Function() getDeltaTime;
+  final FpsTracker fpsTracker;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -165,6 +171,8 @@ class _GifParticlePainter extends CustomPainter {
     final deltaSeconds = getDeltaTime();
     final deltaMicroseconds = (deltaSeconds * 1000000).round();
     final delta = Duration(microseconds: deltaMicroseconds);
+
+    fpsTracker.recordFrame(deltaSeconds);
 
     world.update(delta: delta);
 

@@ -1,14 +1,12 @@
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
-
 import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/services/fps_tracker.dart';
 import 'package:benchmark/services/rive_benchmark_service.dart';
 import 'package:benchmark/widgets/file_drop_zone.dart';
 import 'package:benchmark/widgets/fps_graph_overlay.dart';
 import 'package:benchmark/widgets/instance_count_slider.dart';
-import 'package:benchmark/widgets/rive_bouncing_renderer.dart';
+import 'package:benchmark/widgets/rive_particle_renderer.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class RiveBenchmarkTab extends StatefulWidget {
   const RiveBenchmarkTab({
@@ -28,10 +26,12 @@ class _RiveBenchmarkTabState extends State<RiveBenchmarkTab> {
 
   int _instanceCount = 100;
   String? _loadedFileName;
+  late bool _useBatching;
 
   @override
   void initState() {
     super.initState();
+    _useBatching = !kIsWeb;
     _riveService.initialize();
   }
 
@@ -81,10 +81,53 @@ class _RiveBenchmarkTabState extends State<RiveBenchmarkTab> {
           onChanged: _handleInstanceCountChanged,
         ),
         const SizedBox(height: 16),
+        _buildBatchRenderingToggle(),
+        const SizedBox(height: 16),
         Expanded(
           child: _buildRenderArea(),
         ),
       ],
+    );
+  }
+
+  Widget _buildBatchRenderingToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Text(
+            'Use Batch Rendering',
+            style: TextStyle(fontSize: 14),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message:
+                'Enable to use batch rendering (faster on native, may not work on web). Disable to use individual rendering.',
+            child: Icon(
+              Icons.info_outline,
+              size: 16,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+          ),
+          const Spacer(),
+          Switch(
+            value: _useBatching,
+            onChanged: (value) {
+              setState(() {
+                _useBatching = value;
+              });
+              widget.fpsTracker.reset();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -102,11 +145,13 @@ class _RiveBenchmarkTabState extends State<RiveBenchmarkTab> {
         child: Stack(
           children: [
             if (_riveService.hasLoadedFile)
-              RiveGridRenderer(
+              RiveParticleRenderer(
                 key: ValueKey(_loadedFileName),
                 instanceCount: _instanceCount,
                 world: _world,
                 createRiveContent: _riveService.createRiveContent,
+                useBatching: _useBatching,
+                fpsTracker: widget.fpsTracker,
               )
             else
               const Center(

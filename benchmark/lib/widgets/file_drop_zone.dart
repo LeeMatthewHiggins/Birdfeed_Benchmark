@@ -204,9 +204,6 @@ class _FileDropZoneState extends State<FileDropZone> {
 
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions:
-            widget.allowedExtensions.map((e) => e.replaceAll('.', '')).toList(),
         withData: true,
       );
 
@@ -221,6 +218,14 @@ class _FileDropZoneState extends State<FileDropZone> {
       if (bytes == null) {
         setState(() {
           _errorMessage = 'Unable to read file';
+        });
+        return;
+      }
+
+      if (!_isValidFile(fileName)) {
+        setState(() {
+          _errorMessage =
+              'Invalid file type. Expected ${_formatExtensions()} file';
         });
         return;
       }

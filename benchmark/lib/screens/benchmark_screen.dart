@@ -20,7 +20,6 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _fpsTracker.start();
   }
 
   @override

@@ -100,6 +100,7 @@ class _GifBenchmarkTabState extends State<GifBenchmarkTab> {
                 instanceCount: _instanceCount,
                 world: _world,
                 createGifContent: _gifService.createGifContent,
+                fpsTracker: widget.fpsTracker,
               )
             else
               const Center(

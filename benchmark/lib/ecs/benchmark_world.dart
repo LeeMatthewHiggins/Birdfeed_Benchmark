@@ -11,7 +11,6 @@ import 'package:benchmark/ecs/components/velocity_component.dart';
 import 'package:benchmark/ecs/systems/bounds_collision_system.dart';
 import 'package:benchmark/ecs/systems/gif_animation_system.dart';
 import 'package:benchmark/ecs/systems/movement_system.dart';
-import 'package:benchmark/ecs/systems/rive_animation_system.dart';
 
 final class BenchmarkWorld {
   BenchmarkWorld() {
@@ -36,7 +35,6 @@ final class BenchmarkWorld {
       [
         MovementSystem(),
         BoundsCollisionSystem(),
-        RiveAnimationSystem(),
         GifAnimationSystem(),
       ],
     );

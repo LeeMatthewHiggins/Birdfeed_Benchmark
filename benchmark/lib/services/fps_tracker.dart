@@ -1,24 +1,26 @@
 import 'dart:collection';
-import 'package:flutter/scheduler.dart';
 
 class FpsTracker {
-  FpsTracker({this.maxSamples = 120});
+  FpsTracker({this.maxSamples = 120, this.smoothingSamples = 10});
 
   final int maxSamples;
+  final int smoothingSamples;
   final Queue<double> _fpsSamples = Queue<double>();
-
-  Duration? _lastFrameTimestamp;
-  FrameCallback? _frameCallback;
+  final Queue<double> _smoothingSamples = Queue<double>();
 
   double _currentFps = 0;
-  double _minFps = double.infinity;
-  double _maxFps = 0;
-
-  bool _isTracking = false;
 
   double get currentFps => _currentFps;
-  double get minFps => _minFps == double.infinity ? 0 : _minFps;
-  double get maxFps => _maxFps;
+  double get minFps {
+    if (_fpsSamples.isEmpty) return 0;
+    return _fpsSamples.reduce((a, b) => a < b ? a : b);
+  }
+
+  double get maxFps {
+    if (_fpsSamples.isEmpty) return 0;
+    return _fpsSamples.reduce((a, b) => a > b ? a : b);
+  }
+
   double get averageFps {
     if (_fpsSamples.isEmpty) return 0;
     final sum = _fpsSamples.reduce((a, b) => a + b);
@@ -27,57 +29,37 @@ class FpsTracker {
 
   List<double> get fpsHistory => _fpsSamples.toList();
 
-  void start() {
-    if (_isTracking) return;
+  void recordFrame(double deltaSeconds) {
+    if (deltaSeconds <= 0) return;
 
-    _isTracking = true;
-    _lastFrameTimestamp = null;
+    final instantFps = 1.0 / deltaSeconds;
 
-    _frameCallback = (Duration timestamp) {
-      _onFrame(timestamp);
-      if (_isTracking) {
-        SchedulerBinding.instance.scheduleFrameCallback(_frameCallback!);
-      }
-    };
-
-    SchedulerBinding.instance.scheduleFrameCallback(_frameCallback!);
-  }
-
-  void _onFrame(Duration timestamp) {
-    if (_lastFrameTimestamp != null) {
-      final delta = timestamp - _lastFrameTimestamp!;
-      final deltaSeconds = delta.inMicroseconds / 1000000.0;
-
-      if (deltaSeconds > 0) {
-        _currentFps = 1.0 / deltaSeconds;
-
-        _fpsSamples.add(_currentFps);
-        if (_fpsSamples.length > maxSamples) {
-          _fpsSamples.removeFirst();
-        }
-
-        if (_currentFps < _minFps) _minFps = _currentFps;
-        if (_currentFps > _maxFps) _maxFps = _currentFps;
-      }
+    _fpsSamples.add(instantFps);
+    if (_fpsSamples.length > maxSamples) {
+      _fpsSamples.removeFirst();
     }
 
-    _lastFrameTimestamp = timestamp;
+    _smoothingSamples.add(instantFps);
+    if (_smoothingSamples.length > smoothingSamples) {
+      _smoothingSamples.removeFirst();
+    }
+
+    if (_smoothingSamples.isNotEmpty) {
+      final smoothSum = _smoothingSamples.reduce((a, b) => a + b);
+      _currentFps = smoothSum / _smoothingSamples.length;
+    } else {
+      _currentFps = instantFps;
+    }
   }
 
   void reset() {
     _fpsSamples.clear();
-    _minFps = double.infinity;
-    _maxFps = 0;
+    _smoothingSamples.clear();
     _currentFps = 0;
   }
 
-  void stop() {
-    _isTracking = false;
-    _frameCallback = null;
-  }
-
   void dispose() {
-    stop();
     _fpsSamples.clear();
+    _smoothingSamples.clear();
   }
 }
