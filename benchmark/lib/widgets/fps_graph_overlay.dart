@@ -109,7 +109,7 @@ class _FpsGraphOverlayState extends State<FpsGraphOverlay>
   }
 
   Color _getFpsColor(double fps) {
-    if (fps >= 60) return Colors.green;
+    if (fps > 59) return Colors.green;
     if (fps >= 30) return Colors.yellow;
     return Colors.red;
   }
@@ -154,9 +154,11 @@ class _FpsGraphPainter extends CustomPainter {
   void _drawFpsGraph(Canvas canvas, Size size) {
     if (fpsHistory.length < 2) return;
 
+    final averageFps = fpsHistory.reduce((a, b) => a + b) / fpsHistory.length;
+
     final path = Path();
     final paint = Paint()
-      ..color = Colors.green
+      ..color = _getFpsColor(averageFps)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -173,15 +175,13 @@ class _FpsGraphPainter extends CustomPainter {
       } else {
         path.lineTo(x, y);
       }
-
-      paint.color = _getFpsColor(fpsHistory[i]);
     }
 
     canvas.drawPath(path, paint);
   }
 
   Color _getFpsColor(double fps) {
-    if (fps >= 60) return Colors.green;
+    if (fps > 59) return Colors.green;
     if (fps >= 30) return Colors.yellow;
     return Colors.red;
   }

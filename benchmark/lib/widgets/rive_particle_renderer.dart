@@ -1,27 +1,33 @@
-import 'package:flutter/material.dart';
 import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/ecs/components/rive_content_component.dart';
+import 'package:benchmark/services/fps_tracker.dart';
 import 'package:benchmark/widgets/checkerboard_background.dart';
 import 'package:dentity/dentity.dart';
+import 'package:flutter/material.dart';
+import 'package:rive/rive.dart' as rive;
 import 'package:rive_native/rive_native.dart';
 
-class RiveGridRenderer extends StatefulWidget {
-  const RiveGridRenderer({
+class RiveParticleRenderer extends StatefulWidget {
+  const RiveParticleRenderer({
     required this.instanceCount,
     required this.world,
     required this.createRiveContent,
+    required this.fpsTracker,
+    this.useBatching = false,
     super.key,
   });
 
   final int instanceCount;
   final BenchmarkWorld world;
   final RiveContentComponent? Function() createRiveContent;
+  final FpsTracker fpsTracker;
+  final bool useBatching;
 
   @override
-  State<RiveGridRenderer> createState() => _RiveGridRendererState();
+  State<RiveParticleRenderer> createState() => _RiveParticleRendererState();
 }
 
-class _RiveGridRendererState extends State<RiveGridRenderer> {
+class _RiveParticleRendererState extends State<RiveParticleRenderer> {
   late final RenderTexture _renderTexture;
   late final _RiveNativeRenderer _renderer;
   Size _lastSize = Size.zero;
@@ -38,6 +44,8 @@ class _RiveGridRendererState extends State<RiveGridRenderer> {
       createRiveContent: widget.createRiveContent,
       instanceCount: widget.instanceCount,
       getDeltaTime: _getDeltaTime,
+      useBatching: widget.useBatching,
+      fpsTracker: widget.fpsTracker,
     );
   }
 
@@ -54,10 +62,13 @@ class _RiveGridRendererState extends State<RiveGridRenderer> {
   }
 
   @override
-  void didUpdateWidget(RiveGridRenderer oldWidget) {
+  void didUpdateWidget(RiveParticleRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.instanceCount != widget.instanceCount) {
       _renderer.updateInstanceCount(widget.instanceCount);
+    }
+    if (oldWidget.useBatching != widget.useBatching) {
+      _renderer.updateBatching(useBatching: widget.useBatching);
     }
   }
 
@@ -96,16 +107,21 @@ final class _RiveNativeRenderer extends RenderTexturePainter {
     required this.createRiveContent,
     required int instanceCount,
     required this.getDeltaTime,
-  }) : _instanceCount = instanceCount;
+    required bool useBatching,
+    required this.fpsTracker,
+  })  : _instanceCount = instanceCount,
+        _useBatching = useBatching;
 
   final BenchmarkWorld world;
   final RiveContentComponent? Function() createRiveContent;
   final double Function() getDeltaTime;
+  final FpsTracker fpsTracker;
   final List<Entity> _entities = [];
   int _instanceCount;
   Size _size = Size.zero;
 
   static const double _instanceSize = 100;
+  bool _useBatching;
 
   @override
   Color get background => Colors.transparent;
@@ -122,6 +138,13 @@ final class _RiveNativeRenderer extends RenderTexturePainter {
     if (_instanceCount != count) {
       _instanceCount = count;
       _generateBouncingItems();
+      notifyListeners();
+    }
+  }
+
+  void updateBatching({required bool useBatching}) {
+    if (_useBatching != useBatching) {
+      _useBatching = useBatching;
       notifyListeners();
     }
   }
@@ -166,32 +189,61 @@ final class _RiveNativeRenderer extends RenderTexturePainter {
     final deltaMicroseconds = (deltaSeconds * 1000000).round();
     final delta = Duration(microseconds: deltaMicroseconds);
 
+    fpsTracker.recordFrame(deltaSeconds);
+
     world.update(delta: delta);
 
-    final renderer = texture.renderer;
+    final renderer = texture.renderer..save();
+    _batchAdvanceAndRender(renderer, deltaSeconds);
+    renderer.restore();
 
-    for (final entity in _entities) {
+    return true;
+  }
+
+  void _batchAdvanceAndRender(Renderer renderer, double deltaSeconds) {
+    final stateMachines = <StateMachine>[];
+
+    for (var i = 0; i < _entities.length; i++) {
+      final entity = _entities[i];
       final position = world.getPosition(entity);
       final content = world.getRiveContent(entity);
 
       if (position == null || content == null) continue;
 
       final artboard = content.artboard;
-      final x = position.x;
-      final y = position.y;
-
       final artboardScale = _instanceSize / artboard.width;
-      renderer
-        ..save()
-        ..translate(x, y)
-        ..scale(artboardScale, artboardScale)
-        ..translate(-artboard.width / 2, -artboard.height / 2);
+      final bounds = artboard.bounds;
+      final center = bounds.center();
 
-      artboard.draw(renderer);
-      renderer.restore();
+      final offsetX = position.x - (center.x * artboardScale);
+      final offsetY = position.y - (center.y * artboardScale);
+
+      final transform = Mat2D.fromTranslate(offsetX, offsetY);
+      transform[0] = artboardScale;
+      transform[3] = artboardScale;
+
+      artboard.renderTransform = transform;
+
+      if (_useBatching && content.stateMachine != null) {
+        stateMachines.add(content.stateMachine!);
+      } else {
+        renderer
+          ..save()
+          ..translate(offsetX, offsetY)
+          ..scale(artboardScale, artboardScale);
+        if (content.stateMachine != null) {
+          content.stateMachine!.advanceAndApply(deltaSeconds);
+        } else {
+          artboard.advance(deltaSeconds);
+        }
+        artboard.draw(renderer);
+        renderer.restore();
+      }
     }
 
-    return true;
+    if (stateMachines.isNotEmpty) {
+      rive.Rive.batchAdvanceAndRender(stateMachines, deltaSeconds, renderer);
+    }
   }
 
   @override
