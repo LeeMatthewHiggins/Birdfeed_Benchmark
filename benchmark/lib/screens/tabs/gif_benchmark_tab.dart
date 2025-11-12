@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/services/fps_tracker.dart';
 import 'package:benchmark/services/gif_benchmark_service.dart';
 import 'package:benchmark/widgets/file_drop_zone.dart';
@@ -22,12 +23,14 @@ class GifBenchmarkTab extends StatefulWidget {
 
 class _GifBenchmarkTabState extends State<GifBenchmarkTab> {
   final _gifService = GifBenchmarkService();
+  final _world = BenchmarkWorld();
 
   int _instanceCount = 100;
   String? _loadedFileName;
 
   @override
   void dispose() {
+    _world.dispose();
     _gifService.dispose();
     super.dispose();
   }
@@ -95,7 +98,8 @@ class _GifBenchmarkTabState extends State<GifBenchmarkTab> {
               GifParticleRenderer(
                 key: ValueKey(_loadedFileName),
                 instanceCount: _instanceCount,
-                createParticle: _gifService.createGifParticle,
+                world: _world,
+                createGifContent: _gifService.createGifContent,
               )
             else
               const Center(

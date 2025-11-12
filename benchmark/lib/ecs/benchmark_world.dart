@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:dentity/dentity.dart';
 
 import 'package:benchmark/ecs/components/bounds_component.dart';
+import 'package:benchmark/ecs/components/gif_animation_state_component.dart';
 import 'package:benchmark/ecs/components/gif_content_component.dart';
 import 'package:benchmark/ecs/components/position_component.dart';
 import 'package:benchmark/ecs/components/rive_content_component.dart';
@@ -22,6 +23,8 @@ final class BenchmarkWorld {
         BoundsComponent: ContiguousSparseList<BoundsComponent>.new,
         RiveContentComponent: ContiguousSparseList<RiveContentComponent>.new,
         GifContentComponent: ContiguousSparseList<GifContentComponent>.new,
+        GifAnimationStateComponent:
+            ContiguousSparseList<GifAnimationStateComponent>.new,
       },
     );
 
@@ -87,6 +90,10 @@ final class BenchmarkWorld {
         (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
             (random.nextBool() ? 1 : -1);
 
+    final initialFrameIndex = random.nextInt(content.frames.length);
+    final initialElapsedTime = random.nextDouble() *
+        content.frameDurations[initialFrameIndex];
+
     return _world.createEntity({
       PositionComponent(x: x, y: y),
       VelocityComponent(x: velocityX, y: velocityY),
@@ -96,6 +103,10 @@ final class BenchmarkWorld {
         size: _instanceSize,
       ),
       content,
+      GifAnimationStateComponent(
+        currentFrameIndex: initialFrameIndex,
+        elapsedTime: initialElapsedTime,
+      ),
     });
   }
 
@@ -113,6 +124,10 @@ final class BenchmarkWorld {
 
   GifContentComponent? getGifContent(Entity entity) {
     return _world.getComponent<GifContentComponent>(entity);
+  }
+
+  GifAnimationStateComponent? getGifAnimationState(Entity entity) {
+    return _world.getComponent<GifAnimationStateComponent>(entity);
   }
 
   List<Entity> getEntitiesWithRiveContent() {
@@ -140,8 +155,6 @@ final class BenchmarkWorld {
     }
 
     for (final entity in gifEntities) {
-      final gifContent = _world.getComponent<GifContentComponent>(entity);
-      gifContent?.dispose();
       _world.destroyEntity(entity);
     }
   }

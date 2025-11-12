@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/services/fps_tracker.dart';
 import 'package:benchmark/services/rive_benchmark_service.dart';
 import 'package:benchmark/widgets/file_drop_zone.dart';
@@ -23,6 +24,7 @@ class RiveBenchmarkTab extends StatefulWidget {
 
 class _RiveBenchmarkTabState extends State<RiveBenchmarkTab> {
   final _riveService = RiveBenchmarkService();
+  final _world = BenchmarkWorld();
 
   int _instanceCount = 100;
   String? _loadedFileName;
@@ -35,6 +37,7 @@ class _RiveBenchmarkTabState extends State<RiveBenchmarkTab> {
 
   @override
   void dispose() {
+    _world.dispose();
     _riveService.dispose();
     super.dispose();
   }
@@ -102,7 +105,8 @@ class _RiveBenchmarkTabState extends State<RiveBenchmarkTab> {
               RiveGridRenderer(
                 key: ValueKey(_loadedFileName),
                 instanceCount: _instanceCount,
-                createBouncingItem: _riveService.createBouncingItem,
+                world: _world,
+                createRiveContent: _riveService.createRiveContent,
               )
             else
               const Center(

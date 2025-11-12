@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:benchmark/models/simple_particle.dart';
-import 'package:benchmark/services/gif_benchmark_service.dart';
+import 'package:benchmark/ecs/benchmark_world.dart';
+import 'package:benchmark/ecs/components/gif_content_component.dart';
 import 'package:benchmark/widgets/checkerboard_background.dart';
+import 'package:dentity/dentity.dart';
 
 class GifParticleRenderer extends StatefulWidget {
   const GifParticleRenderer({
     required this.instanceCount,
-    required this.createParticle,
+    required this.world,
+    required this.createGifContent,
     super.key,
   });
 
   final int instanceCount;
-  final SimpleParticle<GifInstance>? Function({
-    required double boundsWidth,
-    required double boundsHeight,
-  }) createParticle;
+  final BenchmarkWorld world;
+  final GifContentComponent? Function() createGifContent;
 
   @override
   State<GifParticleRenderer> createState() => _GifParticleRendererState();
@@ -23,8 +23,10 @@ class GifParticleRenderer extends StatefulWidget {
 class _GifParticleRendererState extends State<GifParticleRenderer>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
-  final List<SimpleParticle<GifInstance>> _particles = [];
+  final List<Entity> _entities = [];
   Size _lastSize = Size.zero;
+  late final Stopwatch _stopwatch;
+  int _lastElapsedMicroseconds = 0;
 
   static const Duration _frameDuration = Duration(milliseconds: 16);
   static const double _instanceSize = 100;
@@ -32,12 +34,23 @@ class _GifParticleRendererState extends State<GifParticleRenderer>
   @override
   void initState() {
     super.initState();
+    _stopwatch = Stopwatch()..start();
     _animationController = AnimationController(
       vsync: this,
       duration: _frameDuration,
     )..repeat();
+  }
 
-    _animationController.addListener(_updateInstances);
+  double _getDeltaTime() {
+    final currentMicroseconds = _stopwatch.elapsedMicroseconds;
+    final deltaMicroseconds = currentMicroseconds - _lastElapsedMicroseconds;
+    _lastElapsedMicroseconds = currentMicroseconds;
+
+    if (deltaMicroseconds == 0) {
+      return 0.016;
+    }
+
+    return (deltaMicroseconds / 1000000.0).clamp(0.0, 0.1);
   }
 
   @override
@@ -51,38 +64,33 @@ class _GifParticleRendererState extends State<GifParticleRenderer>
   @override
   void dispose() {
     _animationController.dispose();
-    _particles.clear();
+    for (final entity in _entities) {
+      widget.world.destroyEntity(entity);
+    }
+    _entities.clear();
     super.dispose();
   }
 
-  void _updateInstances() {
-    final deltaSeconds = _frameDuration.inMicroseconds / 1000000.0;
-    for (final particle in _particles) {
-      particle.content.advance(deltaSeconds);
-      particle.updatePosition(
-        deltaSeconds,
-        _lastSize.width,
-        _lastSize.height,
-        _instanceSize,
-      );
-    }
-  }
-
   void _generateParticles() {
-    _particles.clear();
+    for (final entity in _entities) {
+      widget.world.destroyEntity(entity);
+    }
+    _entities.clear();
 
     if (_lastSize.width <= 0 || _lastSize.height <= 0) {
       return;
     }
 
+    final sharedContent = widget.createGifContent();
+    if (sharedContent == null) return;
+
     for (var i = 0; i < widget.instanceCount; i++) {
-      final particle = widget.createParticle(
+      final entity = widget.world.createGifEntity(
+        content: sharedContent,
         boundsWidth: _lastSize.width,
         boundsHeight: _lastSize.height,
       );
-      if (particle != null) {
-        _particles.add(particle);
-      }
+      _entities.add(entity);
     }
 
     if (mounted) {
@@ -103,7 +111,7 @@ class _GifParticleRendererState extends State<GifParticleRenderer>
           });
         }
 
-        if (_particles.isEmpty) {
+        if (_entities.isEmpty) {
           return const Center(
             child: Text(
               'No GIF file loaded',
@@ -118,8 +126,10 @@ class _GifParticleRendererState extends State<GifParticleRenderer>
             RepaintBoundary(
               child: CustomPaint(
                 painter: _GifParticlePainter(
-                  particles: _particles,
+                  world: widget.world,
+                  entities: _entities,
                   instanceSize: _instanceSize,
+                  getDeltaTime: _getDeltaTime,
                   repaint: _animationController,
                 ),
                 child: Container(),
@@ -134,28 +144,42 @@ class _GifParticleRendererState extends State<GifParticleRenderer>
 
 class _GifParticlePainter extends CustomPainter {
   _GifParticlePainter({
-    required this.particles,
+    required this.world,
+    required this.entities,
     required this.instanceSize,
+    required this.getDeltaTime,
     required Listenable repaint,
   }) : super(repaint: repaint);
 
-  final List<SimpleParticle<GifInstance>> particles;
+  final BenchmarkWorld world;
+  final List<Entity> entities;
   final double instanceSize;
+  final double Function() getDeltaTime;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (particles.isEmpty) {
+    if (entities.isEmpty) {
       return;
     }
 
+    final deltaSeconds = getDeltaTime();
+    final deltaMicroseconds = (deltaSeconds * 1000000).round();
+    final delta = Duration(microseconds: deltaMicroseconds);
+
+    world.update(delta: delta);
+
     final paint = Paint();
 
-    for (final particle in particles) {
-      final gifInstance = particle.content;
-      final x = particle.position.x;
-      final y = particle.position.y;
+    for (final entity in entities) {
+      final position = world.getPosition(entity);
+      final content = world.getGifContent(entity);
+      final animState = world.getGifAnimationState(entity);
 
-      final currentFrame = gifInstance.currentFrame;
+      if (position == null || content == null || animState == null) continue;
+
+      final x = position.x;
+      final y = position.y;
+      final currentFrame = content.frames[animState.currentFrameIndex];
 
       final srcWidth = currentFrame.width.toDouble();
       final srcHeight = currentFrame.height.toDouble();

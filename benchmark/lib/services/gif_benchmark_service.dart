@@ -3,29 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:image/image.dart' as img;
-import 'package:benchmark/models/simple_particle.dart';
-
-class GifInstance {
-  GifInstance(this.frames, this.frameDurations);
-
-  final List<ui.Image> frames;
-  final List<int> frameDurations;
-  int currentFrameIndex = 0;
-  double elapsedTime = 0;
-
-  void advance(double seconds) {
-    elapsedTime += seconds * 1000;
-
-    while (elapsedTime >= frameDurations[currentFrameIndex]) {
-      elapsedTime -= frameDurations[currentFrameIndex];
-      currentFrameIndex = (currentFrameIndex + 1) % frames.length;
-    }
-  }
-
-  ui.Image get currentFrame => frames[currentFrameIndex];
-
-  void dispose() {}
-}
+import 'package:benchmark/ecs/components/gif_content_component.dart';
 
 class GifBenchmarkService {
   factory GifBenchmarkService() => _instance;
@@ -86,20 +64,14 @@ class GifBenchmarkService {
     }
   }
 
-  SimpleParticle<GifInstance>? createGifParticle({
-    required double boundsWidth,
-    required double boundsHeight,
-  }) {
+  GifContentComponent? createGifContent() {
     if (_frames == null || _frames!.isEmpty || _frameDurations == null) {
       return null;
     }
 
-    final gifInstance = GifInstance(_frames!, _frameDurations!);
-
-    return SimpleParticle.createRandom(
-      content: gifInstance,
-      boundsWidth: boundsWidth,
-      boundsHeight: boundsHeight,
+    return GifContentComponent(
+      frames: _frames!,
+      frameDurations: _frameDurations!,
     );
   }
 

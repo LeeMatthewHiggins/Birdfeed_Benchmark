@@ -1,89 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:benchmark/ecs/components/rive_content_component.dart';
 import 'package:rive/rive.dart';
-
-class BouncingItem {
-  BouncingItem({
-    required this.artboard,
-    required this.stateMachine,
-    required double x,
-    required double y,
-    required double velocityX,
-    required double velocityY,
-    required this.animationOffset,
-  })  : position = ArtboardPosition(x, y),
-        velocity = ArtboardVelocity(velocityX, velocityY);
-
-  final Artboard artboard;
-  final StateMachine? stateMachine;
-  final ArtboardPosition position;
-  final ArtboardVelocity velocity;
-  final double animationOffset;
-
-  bool _offsetApplied = false;
-
-  void advance(double seconds) {
-    if (!_offsetApplied) {
-      if (stateMachine != null) {
-        stateMachine!.advanceAndApply(animationOffset);
-      } else {
-        artboard.advance(animationOffset);
-      }
-      _offsetApplied = true;
-    }
-
-    if (stateMachine != null) {
-      stateMachine!.advanceAndApply(seconds);
-    } else {
-      artboard.advance(seconds);
-    }
-  }
-
-  void updatePosition(
-    double deltaSeconds,
-    double boundsWidth,
-    double boundsHeight,
-    double instanceSize,
-  ) {
-    position.x += velocity.x * deltaSeconds;
-    position.y += velocity.y * deltaSeconds;
-
-    final halfSize = instanceSize / 2;
-
-    if (position.x - halfSize <= 0) {
-      position.x = halfSize;
-      velocity.x = velocity.x.abs();
-    } else if (position.x + halfSize >= boundsWidth) {
-      position.x = boundsWidth - halfSize;
-      velocity.x = -velocity.x.abs();
-    }
-
-    if (position.y - halfSize <= 0) {
-      position.y = halfSize;
-      velocity.y = velocity.y.abs();
-    } else if (position.y + halfSize >= boundsHeight) {
-      position.y = boundsHeight - halfSize;
-      velocity.y = -velocity.y.abs();
-    }
-  }
-
-  void dispose() {
-    stateMachine?.dispose();
-    artboard.dispose();
-  }
-}
-
-class ArtboardPosition {
-  ArtboardPosition(this.x, this.y);
-  double x;
-  double y;
-}
-
-class ArtboardVelocity {
-  ArtboardVelocity(this.x, this.y);
-  double x;
-  double y;
-}
 
 class RiveBenchmarkService {
   factory RiveBenchmarkService() => _instance;
@@ -124,10 +42,7 @@ class RiveBenchmarkService {
     }
   }
 
-  BouncingItem? createBouncingItem({
-    required double boundsWidth,
-    required double boundsHeight,
-  }) {
+  RiveContentComponent? createRiveContent() {
     if (_loadedFile == null) {
       return null;
     }
@@ -139,25 +54,12 @@ class RiveBenchmarkService {
       }
 
       final stateMachine = artboard.defaultStateMachine();
-
       final random = Random();
-      final x = random.nextDouble() * boundsWidth;
-      final y = random.nextDouble() * boundsHeight;
-      final velocityX =
-          (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-              (random.nextBool() ? 1 : -1);
-      final velocityY =
-          (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-              (random.nextBool() ? 1 : -1);
       final animationOffset = random.nextDouble() * _maxAnimationOffset;
 
-      return BouncingItem(
+      return RiveContentComponent(
         artboard: artboard,
         stateMachine: stateMachine,
-        x: x,
-        y: y,
-        velocityX: velocityX,
-        velocityY: velocityY,
         animationOffset: animationOffset,
       );
     } on Exception {
@@ -165,8 +67,6 @@ class RiveBenchmarkService {
     }
   }
 
-  static const double _minVelocity = 50;
-  static const double _maxVelocity = 200;
   static const double _maxAnimationOffset = 5;
 
   void dispose() {

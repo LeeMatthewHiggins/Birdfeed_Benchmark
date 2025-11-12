@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:benchmark/services/rive_benchmark_service.dart';
+import 'package:benchmark/ecs/benchmark_world.dart';
+import 'package:benchmark/ecs/components/rive_content_component.dart';
 import 'package:benchmark/widgets/checkerboard_background.dart';
+import 'package:dentity/dentity.dart';
 import 'package:rive_native/rive_native.dart';
 
 class RiveGridRenderer extends StatefulWidget {
   const RiveGridRenderer({
     required this.instanceCount,
-    required this.createBouncingItem,
+    required this.world,
+    required this.createRiveContent,
     super.key,
   });
 
   final int instanceCount;
-  final BouncingItem? Function({
-    required double boundsWidth,
-    required double boundsHeight,
-  }) createBouncingItem;
+  final BenchmarkWorld world;
+  final RiveContentComponent? Function() createRiveContent;
 
   @override
   State<RiveGridRenderer> createState() => _RiveGridRendererState();
@@ -33,7 +34,8 @@ class _RiveGridRendererState extends State<RiveGridRenderer> {
     _renderTexture = RiveNative.instance.makeRenderTexture();
     _stopwatch = Stopwatch()..start();
     _renderer = _RiveNativeRenderer(
-      createBouncingItem: widget.createBouncingItem,
+      world: widget.world,
+      createRiveContent: widget.createRiveContent,
       instanceCount: widget.instanceCount,
       getDeltaTime: _getDeltaTime,
     );
@@ -90,17 +92,16 @@ class _RiveGridRendererState extends State<RiveGridRenderer> {
 
 final class _RiveNativeRenderer extends RenderTexturePainter {
   _RiveNativeRenderer({
-    required this.createBouncingItem,
+    required this.world,
+    required this.createRiveContent,
     required int instanceCount,
     required this.getDeltaTime,
   }) : _instanceCount = instanceCount;
 
-  final BouncingItem? Function({
-    required double boundsWidth,
-    required double boundsHeight,
-  }) createBouncingItem;
+  final BenchmarkWorld world;
+  final RiveContentComponent? Function() createRiveContent;
   final double Function() getDeltaTime;
-  final List<BouncingItem> _bouncingItems = [];
+  final List<Entity> _entities = [];
   int _instanceCount;
   Size _size = Size.zero;
 
@@ -126,22 +127,26 @@ final class _RiveNativeRenderer extends RenderTexturePainter {
   }
 
   void _generateBouncingItems() {
-    for (final item in _bouncingItems) {
-      item.dispose();
+    for (final entity in _entities) {
+      final content = world.getRiveContent(entity);
+      content?.dispose();
+      world.destroyEntity(entity);
     }
-    _bouncingItems.clear();
+    _entities.clear();
 
     if (_size.width <= 0 || _size.height <= 0) {
       return;
     }
 
     for (var i = 0; i < _instanceCount; i++) {
-      final item = createBouncingItem(
-        boundsWidth: _size.width,
-        boundsHeight: _size.height,
-      );
-      if (item != null) {
-        _bouncingItems.add(item);
+      final content = createRiveContent();
+      if (content != null) {
+        final entity = world.createRiveEntity(
+          content: content,
+          boundsWidth: _size.width,
+          boundsHeight: _size.height,
+        );
+        _entities.add(entity);
       }
     }
   }
@@ -153,24 +158,27 @@ final class _RiveNativeRenderer extends RenderTexturePainter {
     Size size,
     double elapsedSeconds,
   ) {
-    if (_bouncingItems.isEmpty) {
+    if (_entities.isEmpty) {
       return false;
     }
 
     final deltaSeconds = getDeltaTime();
+    final deltaMicroseconds = (deltaSeconds * 1000000).round();
+    final delta = Duration(microseconds: deltaMicroseconds);
 
-    for (final item in _bouncingItems) {
-      item
-        ..advance(deltaSeconds)
-        ..updatePosition(deltaSeconds, size.width, size.height, _instanceSize);
-    }
+    world.update(delta: delta);
 
     final renderer = texture.renderer;
 
-    for (final item in _bouncingItems) {
-      final artboard = item.artboard;
-      final x = item.position.x;
-      final y = item.position.y;
+    for (final entity in _entities) {
+      final position = world.getPosition(entity);
+      final content = world.getRiveContent(entity);
+
+      if (position == null || content == null) continue;
+
+      final artboard = content.artboard;
+      final x = position.x;
+      final y = position.y;
 
       final artboardScale = _instanceSize / artboard.width;
       renderer
@@ -188,10 +196,12 @@ final class _RiveNativeRenderer extends RenderTexturePainter {
 
   @override
   void dispose() {
-    for (final item in _bouncingItems) {
-      item.dispose();
+    for (final entity in _entities) {
+      final content = world.getRiveContent(entity);
+      content?.dispose();
+      world.destroyEntity(entity);
     }
-    _bouncingItems.clear();
+    _entities.clear();
     super.dispose();
   }
 }

@@ -10,10 +10,6 @@ final class GifContentComponent extends Component {
 
   final List<ui.Image> frames;
   final List<int> frameDurations;
-  int currentFrameIndex = 0;
-  double elapsedTime = 0;
-
-  ui.Image get currentFrame => frames[currentFrameIndex];
 
   @override
   GifContentComponent clone() => GifContentComponent(
@@ -27,9 +23,5 @@ final class GifContentComponent extends Component {
     return frames.length.compareTo(other.frames.length);
   }
 
-  void dispose() {
-    for (final frame in frames) {
-      frame.dispose();
-    }
-  }
+  void dispose() {}
 }
