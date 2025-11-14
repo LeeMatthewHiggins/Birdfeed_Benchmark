@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:benchmark/screens/tabs/gif_benchmark_tab.dart';
 import 'package:benchmark/screens/tabs/rive_benchmark_tab.dart';
+import 'package:benchmark/screens/tabs/sprite_shader_benchmark_tab.dart';
 import 'package:benchmark/services/fps_tracker.dart';
 
 class BenchmarkScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -48,6 +49,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                 children: [
                   RiveBenchmarkTab(fpsTracker: _fpsTracker),
                   GifBenchmarkTab(fpsTracker: _fpsTracker),
+                  SpriteShaderBenchmarkTab(fpsTracker: _fpsTracker),
                 ],
               ),
             ),
@@ -71,7 +73,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
         ),
         SizedBox(height: 4),
         Text(
-          'Compare Rive and GIF rendering performance',
+          'Compare Rive, GIF, and Sprite Shader rendering performance',
           style: TextStyle(
             fontSize: 14,
             color: Colors.white70,
@@ -100,6 +102,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
         tabs: const [
           Tab(text: 'Rive'),
           Tab(text: 'GIF'),
+          Tab(text: 'Sprite Shader'),
         ],
       ),
     );

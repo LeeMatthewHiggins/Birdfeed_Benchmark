@@ -11,7 +11,7 @@ class InstanceCountSlider extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   static const int _minInstances = 1;
-  static const int _maxInstances = 5000;
+  static const int _maxInstances = 50000;
 
   @override
   Widget build(BuildContext context) {
