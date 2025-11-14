@@ -7,6 +7,8 @@ import 'package:benchmark/ecs/components/gif_animation_state_component.dart';
 import 'package:benchmark/ecs/components/gif_content_component.dart';
 import 'package:benchmark/ecs/components/position_component.dart';
 import 'package:benchmark/ecs/components/rive_content_component.dart';
+import 'package:benchmark/ecs/components/sprite_rect_component.dart';
+import 'package:benchmark/ecs/components/sprite_shader_content_component.dart';
 import 'package:benchmark/ecs/components/velocity_component.dart';
 import 'package:benchmark/ecs/systems/bounds_collision_system.dart';
 import 'package:benchmark/ecs/systems/gif_animation_system.dart';
@@ -24,6 +26,9 @@ final class BenchmarkWorld {
         GifContentComponent: ContiguousSparseList<GifContentComponent>.new,
         GifAnimationStateComponent:
             ContiguousSparseList<GifAnimationStateComponent>.new,
+        SpriteShaderContentComponent:
+            ContiguousSparseList<SpriteShaderContentComponent>.new,
+        SpriteRectComponent: ContiguousSparseList<SpriteRectComponent>.new,
       },
     );
 
@@ -108,6 +113,36 @@ final class BenchmarkWorld {
     });
   }
 
+  Entity createSpriteShaderEntity({
+    required SpriteShaderContentComponent content,
+    required SpriteRectComponent spriteRect,
+    required double boundsWidth,
+    required double boundsHeight,
+    required double spriteSize,
+  }) {
+    final random = Random();
+    final x = random.nextDouble() * boundsWidth;
+    final y = random.nextDouble() * boundsHeight;
+    final velocityX =
+        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
+            (random.nextBool() ? 1 : -1);
+    final velocityY =
+        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
+            (random.nextBool() ? 1 : -1);
+
+    return _world.createEntity({
+      PositionComponent(x: x, y: y),
+      VelocityComponent(x: velocityX, y: velocityY),
+      BoundsComponent(
+        width: boundsWidth,
+        height: boundsHeight,
+        size: spriteSize,
+      ),
+      content,
+      spriteRect,
+    });
+  }
+
   void update({Duration delta = const Duration(milliseconds: 16)}) {
     _world.process(delta: delta);
   }
@@ -128,6 +163,14 @@ final class BenchmarkWorld {
     return _world.getComponent<GifAnimationStateComponent>(entity);
   }
 
+  SpriteShaderContentComponent? getSpriteShaderContent(Entity entity) {
+    return _world.getComponent<SpriteShaderContentComponent>(entity);
+  }
+
+  SpriteRectComponent? getSpriteRect(Entity entity) {
+    return _world.getComponent<SpriteRectComponent>(entity);
+  }
+
   List<Entity> getEntitiesWithRiveContent() {
     final view = _world.viewForTypes({RiveContentComponent});
     return view.toList();
@@ -138,6 +181,11 @@ final class BenchmarkWorld {
     return view.toList();
   }
 
+  List<Entity> getEntitiesWithSpriteShaderContent() {
+    final view = _world.viewForTypes({SpriteShaderContentComponent});
+    return view.toList();
+  }
+
   void destroyEntity(Entity entity) {
     _world.destroyEntity(entity);
   }
@@ -145,6 +193,7 @@ final class BenchmarkWorld {
   void clear() {
     final riveEntities = getEntitiesWithRiveContent();
     final gifEntities = getEntitiesWithGifContent();
+    final spriteShaderEntities = getEntitiesWithSpriteShaderContent();
 
     for (final entity in riveEntities) {
       final riveContent = _world.getComponent<RiveContentComponent>(entity);
@@ -153,6 +202,10 @@ final class BenchmarkWorld {
     }
 
     for (final entity in gifEntities) {
+      _world.destroyEntity(entity);
+    }
+
+    for (final entity in spriteShaderEntities) {
       _world.destroyEntity(entity);
     }
   }
