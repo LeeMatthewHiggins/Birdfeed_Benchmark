@@ -119,7 +119,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
       _lastSpriteSize = widget.spriteSize;
     }
 
-    _painter ??= MegaSpritePainter(
+    return _painter ??= MegaSpritePainter(
       sprites: _sprites,
       atlas: widget.atlas!,
       cellSize: widget.cellSize,
@@ -137,8 +137,6 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
       },
       repaint: _animationController,
     );
-
-    return _painter;
   }
 
   @override

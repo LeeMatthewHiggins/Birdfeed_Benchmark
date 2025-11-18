@@ -239,5 +239,8 @@ class MegaSpritePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(MegaSpritePainter oldDelegate) => true;
+  bool shouldRepaint(MegaSpritePainter oldDelegate) =>
+      oldDelegate.sprites != sprites ||
+      oldDelegate.cellSize != cellSize ||
+      oldDelegate.atlas != atlas;
 }

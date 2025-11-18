@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:benchmark/ecs/components/sprite_shader_content_component.dart';
 import 'package:flutter/foundation.dart';
 import 'package:megasprite/megasprite.dart';
 
@@ -30,17 +29,6 @@ class SpriteShaderBenchmarkService {
       _loadedFileName = null;
       return false;
     }
-  }
-
-  SpriteShaderContentComponent? createSpriteShaderContent() {
-    if (_atlas == null) {
-      return null;
-    }
-
-    return SpriteShaderContentComponent(
-      image: _atlas!.image,
-      shader: _atlas!.shader,
-    );
   }
 
   SpriteAtlas? get atlas => _atlas;

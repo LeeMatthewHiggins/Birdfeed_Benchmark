@@ -22,6 +22,4 @@ final class SpriteShaderContentComponent extends Component {
     if (other is! SpriteShaderContentComponent) return -1;
     return 0;
   }
-
-  void dispose() {}
 }

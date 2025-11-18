@@ -46,25 +46,26 @@ final class BenchmarkWorld {
   }
 
   late final World _world;
+  final Random _random = Random();
 
   static const double _instanceSize = 100;
   static const double _minVelocity = 50;
   static const double _maxVelocity = 200;
+
+  double _randomVelocity() {
+    return (_minVelocity + _random.nextDouble() * (_maxVelocity - _minVelocity)) *
+        (_random.nextBool() ? 1 : -1);
+  }
 
   Entity createRiveEntity({
     required RiveContentComponent content,
     required double boundsWidth,
     required double boundsHeight,
   }) {
-    final random = Random();
-    final x = random.nextDouble() * boundsWidth;
-    final y = random.nextDouble() * boundsHeight;
-    final velocityX =
-        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-            (random.nextBool() ? 1 : -1);
-    final velocityY =
-        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-            (random.nextBool() ? 1 : -1);
+    final x = _random.nextDouble() * boundsWidth;
+    final y = _random.nextDouble() * boundsHeight;
+    final velocityX = _randomVelocity();
+    final velocityY = _randomVelocity();
 
     return _world.createEntity({
       PositionComponent(x: x, y: y),
@@ -83,18 +84,13 @@ final class BenchmarkWorld {
     required double boundsWidth,
     required double boundsHeight,
   }) {
-    final random = Random();
-    final x = random.nextDouble() * boundsWidth;
-    final y = random.nextDouble() * boundsHeight;
-    final velocityX =
-        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-            (random.nextBool() ? 1 : -1);
-    final velocityY =
-        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-            (random.nextBool() ? 1 : -1);
+    final x = _random.nextDouble() * boundsWidth;
+    final y = _random.nextDouble() * boundsHeight;
+    final velocityX = _randomVelocity();
+    final velocityY = _randomVelocity();
 
-    final initialFrameIndex = random.nextInt(content.frames.length);
-    final initialElapsedTime = random.nextDouble() *
+    final initialFrameIndex = _random.nextInt(content.frames.length);
+    final initialElapsedTime = _random.nextDouble() *
         content.frameDurations[initialFrameIndex];
 
     return _world.createEntity({
@@ -120,15 +116,10 @@ final class BenchmarkWorld {
     required double boundsHeight,
     required double spriteSize,
   }) {
-    final random = Random();
-    final x = random.nextDouble() * boundsWidth;
-    final y = random.nextDouble() * boundsHeight;
-    final velocityX =
-        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-            (random.nextBool() ? 1 : -1);
-    final velocityY =
-        (_minVelocity + random.nextDouble() * (_maxVelocity - _minVelocity)) *
-            (random.nextBool() ? 1 : -1);
+    final x = _random.nextDouble() * boundsWidth;
+    final y = _random.nextDouble() * boundsHeight;
+    final velocityX = _randomVelocity();
+    final velocityY = _randomVelocity();
 
     return _world.createEntity({
       PositionComponent(x: x, y: y),
@@ -161,10 +152,6 @@ final class BenchmarkWorld {
 
   GifAnimationStateComponent? getGifAnimationState(Entity entity) {
     return _world.getComponent<GifAnimationStateComponent>(entity);
-  }
-
-  SpriteShaderContentComponent? getSpriteShaderContent(Entity entity) {
-    return _world.getComponent<SpriteShaderContentComponent>(entity);
   }
 
   SpriteRectComponent? getSpriteRect(Entity entity) {

@@ -22,6 +22,4 @@ final class GifContentComponent extends Component {
     if (other is! GifContentComponent) return -1;
     return frames.length.compareTo(other.frames.length);
   }
-
-  void dispose() {}
 }
