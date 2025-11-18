@@ -1,24 +1,5 @@
 import 'package:flutter/material.dart';
-
-class SpriteDebugMetrics {
-  const SpriteDebugMetrics({
-    required this.avgSpritesPerCell,
-    required this.maxSpritesPerCell,
-    required this.textureWidth,
-    required this.textureHeight,
-    required this.gridColumns,
-    required this.gridRows,
-    required this.cellCounts,
-  });
-
-  final double avgSpritesPerCell;
-  final int maxSpritesPerCell;
-  final int textureWidth;
-  final int textureHeight;
-  final int gridColumns;
-  final int gridRows;
-  final List<int> cellCounts;
-}
+import 'package:megasprite/megasprite.dart';
 
 class SpriteDebugOverlay extends StatelessWidget {
   const SpriteDebugOverlay({
@@ -27,7 +8,7 @@ class SpriteDebugOverlay extends StatelessWidget {
     super.key,
   });
 
-  final SpriteDebugMetrics metrics;
+  final SpriteMetrics metrics;
   final int cellSize;
 
   static const Color _kMetricsBackgroundColor = Color(0xCC000000);
@@ -102,7 +83,7 @@ class _CellGridPainter extends CustomPainter {
     required this.cellSize,
   });
 
-  final SpriteDebugMetrics metrics;
+  final SpriteMetrics metrics;
   final int cellSize;
 
   static const int _kHighlightThreshold = 200;

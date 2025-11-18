@@ -1,5 +1,5 @@
-class SpriteShaderConfig {
-  const SpriteShaderConfig._();
+class MegaSpriteConfig {
+  const MegaSpriteConfig._();
 
   static const int maxSpritesPerCell = 255;
   static const int maxSpriteSize = 256;

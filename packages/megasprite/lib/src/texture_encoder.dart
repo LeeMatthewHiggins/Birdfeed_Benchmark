@@ -1,30 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:benchmark/widgets/sprite_cell_binner.dart';
-import 'package:benchmark/widgets/sprite_shader_config.dart';
-import 'package:benchmark/widgets/sprite_texture_layout.dart';
-
-class SpriteData {
-  const SpriteData({
-    required this.minX,
-    required this.minY,
-    required this.maxX,
-    required this.maxY,
-    required this.srcX,
-    required this.srcY,
-    required this.srcWidth,
-    required this.srcHeight,
-  });
-
-  final double minX;
-  final double minY;
-  final double maxX;
-  final double maxY;
-  final double srcX;
-  final double srcY;
-  final double srcWidth;
-  final double srcHeight;
-}
+import 'package:megasprite/src/cell_binner.dart';
+import 'package:megasprite/src/config.dart';
+import 'package:megasprite/src/sprite_data.dart';
+import 'package:megasprite/src/texture_layout.dart';
 
 class SpriteTextureEncoder {
   SpriteTextureEncoder({
@@ -67,8 +46,8 @@ class SpriteTextureEncoder {
         final spritesInCell = binner.cellBins[cellIndex];
         final cellSpriteCount = binner.getCellCount(cellIndex);
 
-        final startIndex = (cellSpriteCount > SpriteShaderConfig.maxSpritesPerCell)
-            ? cellSpriteCount - SpriteShaderConfig.maxSpritesPerCell
+        final startIndex = (cellSpriteCount > MegaSpriteConfig.maxSpritesPerCell)
+            ? cellSpriteCount - MegaSpriteConfig.maxSpritesPerCell
             : 0;
         final endIndex = cellSpriteCount;
 
@@ -121,10 +100,10 @@ class SpriteTextureEncoder {
           final adjustedSrcW = sprite.srcWidth * uvScaleX;
           final adjustedSrcH = sprite.srcHeight * uvScaleY;
 
-          final byteMinX = (clampedMinX + SpriteShaderConfig.signedByteOffset).round();
-          final byteMinY = (clampedMinY + SpriteShaderConfig.signedByteOffset).round();
-          final byteMaxX = (clampedMaxX + SpriteShaderConfig.signedByteOffset).round();
-          final byteMaxY = (clampedMaxY + SpriteShaderConfig.signedByteOffset).round();
+          final byteMinX = (clampedMinX + MegaSpriteConfig.signedByteOffset).round();
+          final byteMinY = (clampedMinY + MegaSpriteConfig.signedByteOffset).round();
+          final byteMaxX = (clampedMaxX + MegaSpriteConfig.signedByteOffset).round();
+          final byteMaxY = (clampedMaxY + MegaSpriteConfig.signedByteOffset).round();
 
           final rawSrcByteX = (adjustedSrcX * 255).round();
           final rawSrcByteY = (adjustedSrcY * 255).round();

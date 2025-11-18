@@ -1,4 +1,4 @@
-import 'package:benchmark/widgets/sprite_shader_config.dart';
+import 'package:megasprite/src/config.dart';
 
 class SpriteTextureLayout {
   SpriteTextureLayout({required this.totalCells}) {
@@ -13,7 +13,7 @@ class SpriteTextureLayout {
   late final int cellDataWidth;
 
   void _calculateLayout() {
-    cellDataWidth = SpriteShaderConfig.maxSpritesPerCell * 2;
+    cellDataWidth = MegaSpriteConfig.maxSpritesPerCell * 2;
 
     final totalPixelsNeeded = cellDataWidth * totalCells;
     final minSide = _nextPowerOf2((totalPixelsNeeded ~/ 8192).clamp(512, 8192));

@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:benchmark/ecs/components/sprite_shader_content_component.dart';
 import 'package:flutter/foundation.dart';
+import 'package:megasprite/megasprite.dart';
 
 class SpriteShaderBenchmarkService {
   factory SpriteShaderBenchmarkService() => _instance;
@@ -11,52 +11,43 @@ class SpriteShaderBenchmarkService {
   static final SpriteShaderBenchmarkService _instance =
       SpriteShaderBenchmarkService._internal();
 
-  ui.Image? _image;
-  ui.FragmentShader? _shader;
+  SpriteAtlas? _atlas;
   String? _loadedFileName;
 
-  bool get hasLoadedFile => _image != null && _shader != null;
+  bool get hasLoadedFile => _atlas != null;
   String? get loadedFileName => _loadedFileName;
 
   Future<bool> loadImageFile(Uint8List bytes, String fileName) async {
     try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-
-      final program =
-          await ui.FragmentProgram.fromAsset('shaders/sprite_shader.frag');
-      _shader = program.fragmentShader();
-
-      _image = image;
+      final atlas = await SpriteAtlas.fromBytes(bytes);
+      _atlas = atlas;
       _loadedFileName = fileName;
       return true;
     } on Exception catch (e, stackTrace) {
       debugPrint('Error loading image file $fileName: $e');
       debugPrint('Stack trace: $stackTrace');
-      _image = null;
-      _shader = null;
+      _atlas = null;
       _loadedFileName = null;
       return false;
     }
   }
 
   SpriteShaderContentComponent? createSpriteShaderContent() {
-    if (_image == null || _shader == null) {
+    if (_atlas == null) {
       return null;
     }
 
     return SpriteShaderContentComponent(
-      image: _image!,
-      shader: _shader!,
+      image: _atlas!.image,
+      shader: _atlas!.shader,
     );
   }
 
+  SpriteAtlas? get atlas => _atlas;
+
   void dispose() {
-    _image?.dispose();
-    _shader?.dispose();
-    _image = null;
-    _shader = null;
+    _atlas?.dispose();
+    _atlas = null;
     _loadedFileName = null;
   }
 }
