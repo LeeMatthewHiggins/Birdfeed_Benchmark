@@ -2,8 +2,8 @@ class SpriteMetrics {
   const SpriteMetrics({
     required this.avgSpritesPerCell,
     required this.maxSpritesPerCell,
-    required this.textureWidth,
-    required this.textureHeight,
+    required this.positionTextureWidth,
+    required this.positionTextureHeight,
     required this.gridColumns,
     required this.gridRows,
     required this.cellCounts,
@@ -11,8 +11,8 @@ class SpriteMetrics {
 
   final double avgSpritesPerCell;
   final int maxSpritesPerCell;
-  final int textureWidth;
-  final int textureHeight;
+  final int positionTextureWidth;
+  final int positionTextureHeight;
   final int gridColumns;
   final int gridRows;
   final List<int> cellCounts;

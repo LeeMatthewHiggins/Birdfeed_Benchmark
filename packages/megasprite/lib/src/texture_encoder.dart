@@ -14,7 +14,7 @@ class SpriteTextureEncoder {
     required this.maxGridColumns,
     required this.maxGridRows,
   }) {
-    final positionPixelCount = layout.textureWidth * layout.textureHeight * 4;
+    final positionPixelCount = layout.dataTextureWidth * layout.dataTextureHeight * 4;
     _positionPixels = Uint8List(positionPixelCount);
 
     final cellCountPixelCount = maxGridColumns * maxGridRows * 4;
@@ -70,14 +70,14 @@ class SpriteTextureEncoder {
           final byteWidth = sprite.width.round().clamp(0, 255);
           final byteHeight = sprite.height.round().clamp(0, 255);
 
-          final atlasMinX = sprite.atlasMinX.round().clamp(0, 65535);
-          final atlasMinY = sprite.atlasMinY.round().clamp(0, 65535);
-          final atlasMaxX = sprite.atlasMaxX.round().clamp(0, 65535);
-          final atlasMaxY = sprite.atlasMaxY.round().clamp(0, 65535);
+          final atlasX = sprite.atlasX.round().clamp(0, 65535);
+          final atlasY = sprite.atlasY.round().clamp(0, 65535);
+          final atlasWidth = sprite.atlasWidth.round().clamp(0, 65535);
+          final atlasHeight = sprite.atlasHeight.round().clamp(0, 65535);
 
           final pixelU = cellU + (encodedCount * MegaSpriteConfig.pixelsPerSprite);
           final pixelV = cellV;
-          final pixelIndex = (pixelV * layout.textureWidth + pixelU) * 4;
+          final pixelIndex = (pixelV * layout.dataTextureWidth + pixelU) * 4;
 
           pixels[pixelIndex] = byteX;
           pixels[pixelIndex + 1] = byteY;
@@ -85,16 +85,16 @@ class SpriteTextureEncoder {
           pixels[pixelIndex + 3] = byteHeight;
 
           final pixelIndex2 = pixelIndex + 4;
-          pixels[pixelIndex2] = atlasMinX % 256;
-          pixels[pixelIndex2 + 1] = atlasMinX ~/ 256;
-          pixels[pixelIndex2 + 2] = atlasMinY % 256;
-          pixels[pixelIndex2 + 3] = atlasMinY ~/ 256;
+          pixels[pixelIndex2] = atlasX % 256;
+          pixels[pixelIndex2 + 1] = atlasX ~/ 256;
+          pixels[pixelIndex2 + 2] = atlasY % 256;
+          pixels[pixelIndex2 + 3] = atlasY ~/ 256;
 
           final pixelIndex3 = pixelIndex + 8;
-          pixels[pixelIndex3] = atlasMaxX % 256;
-          pixels[pixelIndex3 + 1] = atlasMaxX ~/ 256;
-          pixels[pixelIndex3 + 2] = atlasMaxY % 256;
-          pixels[pixelIndex3 + 3] = atlasMaxY ~/ 256;
+          pixels[pixelIndex3] = atlasWidth % 256;
+          pixels[pixelIndex3 + 1] = atlasWidth ~/ 256;
+          pixels[pixelIndex3 + 2] = atlasHeight % 256;
+          pixels[pixelIndex3 + 3] = atlasHeight ~/ 256;
 
           encodedCount++;
         }

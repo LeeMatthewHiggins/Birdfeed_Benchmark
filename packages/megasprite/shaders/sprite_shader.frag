@@ -40,8 +40,8 @@ void main() {
     float v = (cellUV.y + 0.5) / uPositionDataSize.y;
 
     vec4 posData = texture(uPositionData, vec2(u1, v));
-    vec4 atlasMinData = texture(uPositionData, vec2(u2, v));
-    vec4 atlasMaxData = texture(uPositionData, vec2(u3, v));
+    vec4 atlasPosData = texture(uPositionData, vec2(u2, v));
+    vec4 atlasSizeData = texture(uPositionData, vec2(u3, v));
 
     vec2 spritePos = (posData.rg * 255.0) - kSignedByteOffset;
     vec2 spriteSize = posData.ba * 255.0;
@@ -49,14 +49,17 @@ void main() {
     vec2 spriteMin = spritePos;
     vec2 spriteMax = spritePos + spriteSize;
 
-    vec2 atlasMin = vec2(
-      atlasMinData.r * 255.0 + atlasMinData.g * 255.0 * 256.0,
-      atlasMinData.b * 255.0 + atlasMinData.a * 255.0 * 256.0
+    vec2 atlasPos = vec2(
+      atlasPosData.r * 255.0 + atlasPosData.g * 255.0 * 256.0,
+      atlasPosData.b * 255.0 + atlasPosData.a * 255.0 * 256.0
     );
-    vec2 atlasMax = vec2(
-      atlasMaxData.r * 255.0 + atlasMaxData.g * 255.0 * 256.0,
-      atlasMaxData.b * 255.0 + atlasMaxData.a * 255.0 * 256.0
+    vec2 atlasSize = vec2(
+      atlasSizeData.r * 255.0 + atlasSizeData.g * 255.0 * 256.0,
+      atlasSizeData.b * 255.0 + atlasSizeData.a * 255.0 * 256.0
     );
+
+    vec2 atlasMin = atlasPos;
+    vec2 atlasMax = atlasPos + atlasSize - vec2(1.0);
 
     vec2 cellMin = vec2(0.0);
     vec2 cellMax = vec2(uCellSize);

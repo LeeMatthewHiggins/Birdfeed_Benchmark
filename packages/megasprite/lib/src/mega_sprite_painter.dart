@@ -37,6 +37,10 @@ class MegaSpritePainter extends CustomPainter {
   SpriteCellBinner? _binner;
   List<int>? _actualCounts;
   List<SpriteData?>? _spriteDataList;
+  final _paint = Paint();
+  Size _lastSize = Size.zero;
+  int _cachedGridColumns = 0;
+  int _cachedGridRows = 0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -55,18 +59,21 @@ class MegaSpritePainter extends CustomPainter {
       return;
     }
 
-    final gridColumns = (size.width / cellSize).ceil();
-    final gridRows = (size.height / cellSize).ceil();
+    if (size != _lastSize) {
+      _lastSize = size;
+      _cachedGridColumns = (size.width / cellSize).ceil();
+      _cachedGridRows = (size.height / cellSize).ceil();
+    }
 
     final shader = atlas.shader
       ..setFloat(0, size.width)
       ..setFloat(1, size.height)
-      ..setFloat(2, gridColumns.toDouble())
-      ..setFloat(3, gridRows.toDouble())
+      ..setFloat(2, _cachedGridColumns.toDouble())
+      ..setFloat(3, _cachedGridRows.toDouble())
       ..setFloat(4, atlas.image.width.toDouble())
       ..setFloat(5, atlas.image.height.toDouble())
-      ..setFloat(6, _layout!.textureWidth.toDouble())
-      ..setFloat(7, _layout!.textureHeight.toDouble())
+      ..setFloat(6, _layout!.dataTextureWidth.toDouble())
+      ..setFloat(7, _layout!.dataTextureHeight.toDouble())
       ..setFloat(8, _layout!.cellsPerRow.toDouble())
       ..setFloat(9, _layout!.cellDataWidth.toDouble())
       ..setFloat(10, cellSize.toDouble())
@@ -74,11 +81,11 @@ class MegaSpritePainter extends CustomPainter {
       ..setImageSampler(1, currentPosTexture)
       ..setImageSampler(2, currentCountTexture);
 
-    final paint = Paint()..shader = shader;
+    _paint.shader = shader;
 
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      paint,
+      _paint,
     );
   }
 
@@ -163,10 +170,10 @@ class MegaSpritePainter extends CustomPainter {
         y: sprite.y - halfSize,
         width: sprite.width,
         height: sprite.width,
-        atlasMinX: sprite.sourceRect.left,
-        atlasMinY: sprite.sourceRect.top,
-        atlasMaxX: sprite.sourceRect.right - 1,
-        atlasMaxY: sprite.sourceRect.bottom - 1,
+        atlasX: sprite.sourceRect.left,
+        atlasY: sprite.sourceRect.top,
+        atlasWidth: sprite.sourceRect.width,
+        atlasHeight: sprite.sourceRect.height,
       );
     }
 
@@ -196,8 +203,8 @@ class MegaSpritePainter extends CustomPainter {
       SpriteMetrics(
         avgSpritesPerCell: avgSprites,
         maxSpritesPerCell: maxSprites,
-        textureWidth: layout.textureWidth,
-        textureHeight: layout.textureHeight,
+        positionTextureWidth: layout.dataTextureWidth,
+        positionTextureHeight: layout.dataTextureHeight,
         gridColumns: _maxGridColumns,
         gridRows: _maxGridRows,
         cellCounts: actualCounts,
@@ -209,8 +216,8 @@ class MegaSpritePainter extends CustomPainter {
 
     ui.decodeImageFromPixels(
       positionPixels,
-      layout.textureWidth,
-      layout.textureHeight,
+      layout.dataTextureWidth,
+      layout.dataTextureHeight,
       ui.PixelFormat.rgba8888,
       (image) {
         newPositionTexture = image;

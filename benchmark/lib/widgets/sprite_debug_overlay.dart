@@ -28,7 +28,7 @@ class SpriteDebugOverlay extends StatelessWidget {
           size: Size.infinite,
         ),
         Positioned(
-          top: _kMetricsPadding,
+          bottom: _kMetricsPadding,
           right: _kMetricsPadding,
           child: Container(
             padding: const EdgeInsets.all(_kMetricsPadding),
@@ -40,7 +40,7 @@ class SpriteDebugOverlay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildMetric('Grid', '${metrics.gridColumns}x${metrics.gridRows}'),
-                _buildMetric('Texture', '${metrics.textureWidth}x${metrics.textureHeight}'),
+                _buildMetric('Data Texture', '${metrics.positionTextureWidth}x${metrics.positionTextureHeight}'),
                 _buildMetric('Avg/Cell', metrics.avgSpritesPerCell.toStringAsFixed(1)),
                 _buildMetric('Max/Cell', '${metrics.maxSpritesPerCell}'),
               ],
