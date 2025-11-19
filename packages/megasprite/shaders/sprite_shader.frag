@@ -1,9 +1,7 @@
 uniform vec2 uCanvasSize;
 uniform vec2 uGridSize;
-uniform float uInstanceSize;
-uniform vec2 uImageSize;
-uniform float uTextureWidth;
-uniform float uTextureHeight;
+uniform vec2 uAtlasSize;
+uniform vec2 uPositionDataSize;
 uniform float uCellsPerRow;
 uniform float uCellDataWidth;
 uniform float uCellSize;
@@ -37,9 +35,9 @@ void main() {
     if (float(i) >= cellSpriteCount) break;
 
     float pixelU = cellU + float(i) * 2.0;
-    float u1 = (pixelU + 0.5) / uTextureWidth;
-    float u2 = (pixelU + 1.5) / uTextureWidth;
-    float v = (cellV + 0.5) / uTextureHeight;
+    float u1 = (pixelU + 0.5) / uPositionDataSize.x;
+    float u2 = (pixelU + 1.5) / uPositionDataSize.x;
+    float v = (cellV + 0.5) / uPositionDataSize.y;
 
     vec4 aabbData = texture(uPositionData, vec2(u1, v));
     vec4 srcData = texture(uPositionData, vec2(u2, v));
