@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:megasprite/src/config.dart';
 
 class SpriteTextureLayout {
@@ -17,29 +15,37 @@ class SpriteTextureLayout {
   void _calculateLayout() {
     cellDataWidth = MegaSpriteConfig.maxSpritesPerCell * MegaSpriteConfig.pixelsPerSprite;
 
-    final totalPixelsNeeded = cellDataWidth * totalCells;
-    final approxSide = sqrt(totalPixelsNeeded);
+    final minWidth = _nextPowerOf2(cellDataWidth);
+    var bestWidth = minWidth;
+    var bestHeight = 16384;
+    var bestWaste = double.infinity;
 
-    var width = _nextPowerOf2(approxSide.ceil());
+    for (var testWidth = minWidth; testWidth <= 16384; testWidth = testWidth * 2) {
+      final cellsInRow = testWidth ~/ cellDataWidth;
+      if (cellsInRow == 0) continue;
 
-    if (width < cellDataWidth) {
-      width = _nextPowerOf2(cellDataWidth);
+      final rowsNeeded = (totalCells / cellsInRow).ceil();
+      final testHeight = _nextPowerOf2(rowsNeeded);
+
+      final totalPixels = testWidth * testHeight;
+      final usedPixels = cellDataWidth * totalCells;
+      final waste = totalPixels - usedPixels;
+
+      if (waste < bestWaste) {
+        bestWaste = waste.toDouble();
+        bestWidth = testWidth;
+        bestHeight = testHeight;
+      }
     }
 
-    textureWidth = width;
+    textureWidth = bestWidth;
     cellsPerRow = textureWidth ~/ cellDataWidth;
-
-    final rowsNeeded = (totalCells / cellsPerRow).ceil();
-    textureHeight = _nextPowerOf2(rowsNeeded);
+    textureHeight = bestHeight;
   }
 
   int _nextPowerOf2(int n) {
-    if (n <= 512) return 512;
-    if (n <= 1024) return 1024;
-    if (n <= 2048) return 2048;
-    if (n <= 4096) return 4096;
-    if (n <= 8192) return 8192;
-    return 16384;
+    if (n <= 1) return 1;
+    return 1 << (n - 1).bitLength;
   }
 
   int getCellU(int cellIndex) {
