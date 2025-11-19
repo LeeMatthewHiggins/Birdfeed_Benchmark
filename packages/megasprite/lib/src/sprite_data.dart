@@ -4,18 +4,18 @@ class SpriteData {
     required this.minY,
     required this.maxX,
     required this.maxY,
-    required this.srcX,
-    required this.srcY,
-    required this.srcWidth,
-    required this.srcHeight,
+    required this.atlasMinX,
+    required this.atlasMinY,
+    required this.atlasMaxX,
+    required this.atlasMaxY,
   });
 
   final double minX;
   final double minY;
   final double maxX;
   final double maxY;
-  final double srcX;
-  final double srcY;
-  final double srcWidth;
-  final double srcHeight;
+  final double atlasMinX;
+  final double atlasMinY;
+  final double atlasMaxX;
+  final double atlasMaxY;
 }

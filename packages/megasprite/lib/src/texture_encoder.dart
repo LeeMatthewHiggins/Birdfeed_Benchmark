@@ -83,39 +83,17 @@ class SpriteTextureEncoder {
               ? _minBound
               : (originalCellRelativeMaxY > _maxBound ? _maxBound : originalCellRelativeMaxY);
 
-          final originalWidth = sprite.maxX - sprite.minX;
-          final originalHeight = sprite.maxY - sprite.minY;
-
-          final clampedWidth = clampedMaxX - clampedMinX;
-          final clampedHeight = clampedMaxY - clampedMinY;
-
-          final uvOffsetX = (clampedMinX - originalCellRelativeMinX) / originalWidth;
-          final uvOffsetY = (clampedMinY - originalCellRelativeMinY) / originalHeight;
-
-          final uvScaleX = clampedWidth / originalWidth;
-          final uvScaleY = clampedHeight / originalHeight;
-
-          final adjustedSrcX = sprite.srcX + (uvOffsetX * sprite.srcWidth);
-          final adjustedSrcY = sprite.srcY + (uvOffsetY * sprite.srcHeight);
-          final adjustedSrcW = sprite.srcWidth * uvScaleX;
-          final adjustedSrcH = sprite.srcHeight * uvScaleY;
-
           final byteMinX = (clampedMinX + MegaSpriteConfig.signedByteOffset).round();
           final byteMinY = (clampedMinY + MegaSpriteConfig.signedByteOffset).round();
           final byteMaxX = (clampedMaxX + MegaSpriteConfig.signedByteOffset).round();
           final byteMaxY = (clampedMaxY + MegaSpriteConfig.signedByteOffset).round();
 
-          final rawSrcByteX = (adjustedSrcX * 255).round();
-          final rawSrcByteY = (adjustedSrcY * 255).round();
-          final rawSrcByteW = (adjustedSrcW * 255).round();
-          final rawSrcByteH = (adjustedSrcH * 255).round();
+          final atlasMinX = sprite.atlasMinX.round().clamp(0, 65535);
+          final atlasMinY = sprite.atlasMinY.round().clamp(0, 65535);
+          final atlasMaxX = sprite.atlasMaxX.round().clamp(0, 65535);
+          final atlasMaxY = sprite.atlasMaxY.round().clamp(0, 65535);
 
-          final srcByteX = rawSrcByteX < 0 ? 0 : (rawSrcByteX > 255 ? 255 : rawSrcByteX);
-          final srcByteY = rawSrcByteY < 0 ? 0 : (rawSrcByteY > 255 ? 255 : rawSrcByteY);
-          final srcByteW = rawSrcByteW < 0 ? 0 : (rawSrcByteW > 255 ? 255 : rawSrcByteW);
-          final srcByteH = rawSrcByteH < 0 ? 0 : (rawSrcByteH > 255 ? 255 : rawSrcByteH);
-
-          final pixelU = cellU + (encodedCount * 2);
+          final pixelU = cellU + (encodedCount * MegaSpriteConfig.pixelsPerSprite);
           final pixelV = cellV;
           final pixelIndex = (pixelV * layout.textureWidth + pixelU) * 4;
 
@@ -125,10 +103,16 @@ class SpriteTextureEncoder {
           pixels[pixelIndex + 3] = byteMaxY;
 
           final pixelIndex2 = pixelIndex + 4;
-          pixels[pixelIndex2] = srcByteX;
-          pixels[pixelIndex2 + 1] = srcByteY;
-          pixels[pixelIndex2 + 2] = srcByteW;
-          pixels[pixelIndex2 + 3] = srcByteH;
+          pixels[pixelIndex2] = atlasMinX & 0xFF;
+          pixels[pixelIndex2 + 1] = (atlasMinX >> 8) & 0xFF;
+          pixels[pixelIndex2 + 2] = atlasMinY & 0xFF;
+          pixels[pixelIndex2 + 3] = (atlasMinY >> 8) & 0xFF;
+
+          final pixelIndex3 = pixelIndex + 8;
+          pixels[pixelIndex3] = atlasMaxX & 0xFF;
+          pixels[pixelIndex3 + 1] = (atlasMaxX >> 8) & 0xFF;
+          pixels[pixelIndex3 + 2] = atlasMaxY & 0xFF;
+          pixels[pixelIndex3 + 3] = (atlasMaxY >> 8) & 0xFF;
 
           encodedCount++;
         }

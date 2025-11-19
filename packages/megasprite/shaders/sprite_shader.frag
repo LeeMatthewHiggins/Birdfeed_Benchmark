@@ -33,19 +33,27 @@ void main() {
   for (int i = 0; i < kMaxSpritesPerCell; i++) {
     if (float(i) >= cellSpriteCount) break;
 
-    float pixelU = cellUV.x + float(i) * 2.0;
+    float pixelU = cellUV.x + float(i) * 3.0;
     float u1 = (pixelU + 0.5) / uPositionDataSize.x;
     float u2 = (pixelU + 1.5) / uPositionDataSize.x;
+    float u3 = (pixelU + 2.5) / uPositionDataSize.x;
     float v = (cellUV.y + 0.5) / uPositionDataSize.y;
 
     vec4 aabbData = texture(uPositionData, vec2(u1, v));
-    vec4 srcData = texture(uPositionData, vec2(u2, v));
+    vec4 atlasMinData = texture(uPositionData, vec2(u2, v));
+    vec4 atlasMaxData = texture(uPositionData, vec2(u3, v));
 
     vec2 aabbMin = (aabbData.rg * 255.0) - kSignedByteOffset;
     vec2 aabbMax = (aabbData.ba * 255.0) - kSignedByteOffset;
 
-    vec2 srcUV = srcData.rg;
-    vec2 srcSize = srcData.ba;
+    vec2 atlasMin = vec2(
+      atlasMinData.r + atlasMinData.g * 256.0,
+      atlasMinData.b + atlasMinData.a * 256.0
+    );
+    vec2 atlasMax = vec2(
+      atlasMaxData.r + atlasMaxData.g * 256.0,
+      atlasMaxData.b + atlasMaxData.a * 256.0
+    );
 
     if (pixelInCell.x >= aabbMin.x && pixelInCell.x < aabbMax.x + 1.0 &&
         pixelInCell.y >= aabbMin.y && pixelInCell.y < aabbMax.y + 1.0) {
@@ -54,7 +62,8 @@ void main() {
       vec2 spriteSize = aabbMax - aabbMin;
       vec2 spriteUV = localPos / spriteSize;
 
-      vec2 texCoord = srcUV + spriteUV * srcSize;
+      vec2 atlasSize = atlasMax - atlasMin;
+      vec2 texCoord = (atlasMin + spriteUV * atlasSize) / uAtlasSize;
 
       vec4 texColor = texture(uAtlasTexture, texCoord);
       fragColor = mix(fragColor, texColor, texColor.a);
