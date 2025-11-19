@@ -53,9 +53,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     _animationController = AnimationController(
       vsync: this,
       duration: _kFrameDuration,
-    )
-      ..addListener(_updateSprites)
-      ..repeat();
+    )..repeat();
   }
 
   double _getDeltaTime() {
@@ -123,6 +121,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
       sprites: _sprites,
       atlas: widget.atlas!,
       cellSize: widget.cellSize,
+      onBeforePaint: _updateSprites,
       onMetricsUpdate: (metrics) {
         if (!widget.showDebugOverlay) return;
 

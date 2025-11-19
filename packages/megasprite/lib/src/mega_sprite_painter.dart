@@ -14,6 +14,7 @@ class MegaSpritePainter extends CustomPainter {
     required this.sprites,
     required this.atlas,
     required this.cellSize,
+    this.onBeforePaint,
     this.onMetricsUpdate,
     super.repaint,
   });
@@ -21,6 +22,7 @@ class MegaSpritePainter extends CustomPainter {
   final List<Sprite> sprites;
   final SpriteAtlas atlas;
   final int cellSize;
+  final void Function()? onBeforePaint;
   final void Function(SpriteMetrics)? onMetricsUpdate;
 
   ui.Image? _positionTextureA;
@@ -44,6 +46,8 @@ class MegaSpritePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    onBeforePaint?.call();
+
     if (sprites.isEmpty) {
       return;
     }

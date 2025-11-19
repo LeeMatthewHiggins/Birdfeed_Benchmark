@@ -36,65 +36,69 @@ class SpriteTextureEncoder {
     List<int> actualCounts,
   ) {
     final pixels = _positionPixels;
+    final gridColumns = binner.gridColumns;
+    final gridRows = binner.gridRows;
+    final cellSize = binner.cellSize;
+    final cellBins = binner.cellBins;
+    final cellsPerRow = layout.cellsPerRow;
+    final cellDataWidth = layout.cellDataWidth;
+    final dataTextureWidth = layout.dataTextureWidth;
+    const maxSprites = MegaSpriteConfig.maxSpritesPerCell;
+    const pixelsPerSprite = MegaSpriteConfig.pixelsPerSprite;
+    const signedOffset = MegaSpriteConfig.signedByteOffset;
 
-    for (var cellY = 0; cellY < binner.gridRows; cellY++) {
-      for (var cellX = 0; cellX < binner.gridColumns; cellX++) {
-        final cellIndex = cellY * binner.gridColumns + cellX;
-        final spritesInCell = binner.cellBins[cellIndex];
+    for (var cellY = 0; cellY < gridRows; cellY++) {
+      for (var cellX = 0; cellX < gridColumns; cellX++) {
+        final cellIndex = cellY * gridColumns + cellX;
+        final spritesInCell = cellBins[cellIndex];
         final cellSpriteCount = binner.getCellCount(cellIndex);
 
-        final startIndex = (cellSpriteCount > MegaSpriteConfig.maxSpritesPerCell)
-            ? cellSpriteCount - MegaSpriteConfig.maxSpritesPerCell
+        final startIndex = cellSpriteCount > maxSprites
+            ? cellSpriteCount - maxSprites
             : 0;
-        final endIndex = cellSpriteCount;
 
-        final cellTopLeftX = cellX * binner.cellSize;
-        final cellTopLeftY = cellY * binner.cellSize;
+        final cellTopLeftX = cellX * cellSize;
+        final cellTopLeftY = cellY * cellSize;
 
-        final cellU = layout.getCellU(cellIndex);
-        final cellV = layout.getCellV(cellIndex);
+        final cellU = (cellIndex % cellsPerRow) * cellDataWidth;
+        final cellV = cellIndex ~/ cellsPerRow;
 
         var encodedCount = 0;
 
-        for (var i = startIndex; i < endIndex; i++) {
-          final spriteIndex = spritesInCell[i];
-          final sprite = sprites[spriteIndex];
-
+        for (var i = startIndex; i < cellSpriteCount; i++) {
+          final sprite = sprites[spritesInCell[i]];
           if (sprite == null) continue;
 
-          final cellRelativeX = sprite.x - cellTopLeftX;
-          final cellRelativeY = sprite.y - cellTopLeftY;
+          final relX = (sprite.x - cellTopLeftX + signedOffset).toInt();
+          final relY = (sprite.y - cellTopLeftY + signedOffset).toInt();
 
-          final byteX = (cellRelativeX + MegaSpriteConfig.signedByteOffset).round().clamp(0, 255);
-          final byteY = (cellRelativeY + MegaSpriteConfig.signedByteOffset).round().clamp(0, 255);
-          final byteWidth = sprite.width.round().clamp(0, 255);
-          final byteHeight = sprite.height.round().clamp(0, 255);
+          final byteX = relX < 0 ? 0 : (relX > 255 ? 255 : relX);
+          final byteY = relY < 0 ? 0 : (relY > 255 ? 255 : relY);
+          final byteWidth = sprite.width.toInt() & 0xFF;
+          final byteHeight = sprite.height.toInt() & 0xFF;
 
-          final atlasX = sprite.atlasX.round().clamp(0, 65535);
-          final atlasY = sprite.atlasY.round().clamp(0, 65535);
-          final atlasWidth = sprite.atlasWidth.round().clamp(0, 65535);
-          final atlasHeight = sprite.atlasHeight.round().clamp(0, 65535);
+          final atlasX = sprite.atlasX.toInt();
+          final atlasY = sprite.atlasY.toInt();
+          final atlasWidth = sprite.atlasWidth.toInt();
+          final atlasHeight = sprite.atlasHeight.toInt();
 
-          final pixelU = cellU + (encodedCount * MegaSpriteConfig.pixelsPerSprite);
-          final pixelV = cellV;
-          final pixelIndex = (pixelV * layout.dataTextureWidth + pixelU) * 4;
+          final pixelU = cellU + (encodedCount * pixelsPerSprite);
+          final pixelBase = (cellV * dataTextureWidth + pixelU) * 4;
 
-          pixels[pixelIndex] = byteX;
-          pixels[pixelIndex + 1] = byteY;
-          pixels[pixelIndex + 2] = byteWidth;
-          pixels[pixelIndex + 3] = byteHeight;
+          pixels[pixelBase] = byteX;
+          pixels[pixelBase + 1] = byteY;
+          pixels[pixelBase + 2] = byteWidth;
+          pixels[pixelBase + 3] = byteHeight;
 
-          final pixelIndex2 = pixelIndex + 4;
-          pixels[pixelIndex2] = atlasX % 256;
-          pixels[pixelIndex2 + 1] = atlasX ~/ 256;
-          pixels[pixelIndex2 + 2] = atlasY % 256;
-          pixels[pixelIndex2 + 3] = atlasY ~/ 256;
+          pixels[pixelBase + 4] = atlasX & 0xFF;
+          pixels[pixelBase + 5] = atlasX >> 8;
+          pixels[pixelBase + 6] = atlasY & 0xFF;
+          pixels[pixelBase + 7] = atlasY >> 8;
 
-          final pixelIndex3 = pixelIndex + 8;
-          pixels[pixelIndex3] = atlasWidth % 256;
-          pixels[pixelIndex3 + 1] = atlasWidth ~/ 256;
-          pixels[pixelIndex3 + 2] = atlasHeight % 256;
-          pixels[pixelIndex3 + 3] = atlasHeight ~/ 256;
+          pixels[pixelBase + 8] = atlasWidth & 0xFF;
+          pixels[pixelBase + 9] = atlasWidth >> 8;
+          pixels[pixelBase + 10] = atlasHeight & 0xFF;
+          pixels[pixelBase + 11] = atlasHeight >> 8;
 
           encodedCount++;
         }
@@ -107,18 +111,18 @@ class SpriteTextureEncoder {
   }
 
   Uint8List encodeCellCountData(List<int> actualCounts) {
-    final pixelCount = maxGridColumns * maxGridRows * 4;
-    final pixels = _cellCountPixels..fillRange(0, pixelCount, 0);
+    final pixels = _cellCountPixels;
 
     for (var cellY = 0; cellY < binner.gridRows; cellY++) {
       for (var cellX = 0; cellX < binner.gridColumns; cellX++) {
         final cellIndex = cellY * binner.gridColumns + cellX;
         final count = actualCounts[cellIndex];
 
-        pixels[cellIndex * 4] = count;
-        pixels[cellIndex * 4 + 1] = 0;
-        pixels[cellIndex * 4 + 2] = 0;
-        pixels[cellIndex * 4 + 3] = 255;
+        final pixelBase = cellIndex * 4;
+        pixels[pixelBase] = count;
+        pixels[pixelBase + 1] = 0;
+        pixels[pixelBase + 2] = 0;
+        pixels[pixelBase + 3] = 255;
       }
     }
 

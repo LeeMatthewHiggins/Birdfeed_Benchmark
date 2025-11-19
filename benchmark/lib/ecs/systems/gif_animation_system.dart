@@ -10,23 +10,24 @@ final class GifAnimationSystem extends EntitySystem {
   @override
   void processEntity(
     Entity entity,
-    Map<Type, SparseList<Component>> componentLists,
+    EntityComposition composition,
     Duration delta,
   ) {
-    final content =
-        componentLists[GifContentComponent]?[entity] as GifContentComponent?;
-    final state = componentLists[GifAnimationStateComponent]?[entity]
-        as GifAnimationStateComponent?;
+    final content = composition.get<GifContentComponent>(entity)!;
+    final state = composition.get<GifAnimationStateComponent>(entity)!;
 
-    if (content == null || state == null || content.frames.isEmpty) return;
+    if (content.frames.isEmpty) return;
 
     final deltaMillis = delta.inMilliseconds.toDouble();
     state.elapsedTime += deltaMillis;
 
-    while (state.elapsedTime >= content.frameDurations[state.currentFrameIndex]) {
+    final frameDurations = content.frameDurations;
+    final frameCount = content.frames.length;
+
+    while (state.elapsedTime >= frameDurations[state.currentFrameIndex]) {
       state
-        ..elapsedTime -= content.frameDurations[state.currentFrameIndex]
-        ..currentFrameIndex = (state.currentFrameIndex + 1) % content.frames.length;
+        ..elapsedTime -= frameDurations[state.currentFrameIndex]
+        ..currentFrameIndex = (state.currentFrameIndex + 1) % frameCount;
     }
   }
 }

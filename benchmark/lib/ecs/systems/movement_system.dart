@@ -10,15 +10,11 @@ final class MovementSystem extends EntitySystem {
   @override
   void processEntity(
     Entity entity,
-    Map<Type, SparseList<Component>> componentLists,
+    EntityComposition composition,
     Duration delta,
   ) {
-    final position =
-        componentLists[PositionComponent]?[entity] as PositionComponent?;
-    final velocity =
-        componentLists[VelocityComponent]?[entity] as VelocityComponent?;
-
-    if (position == null || velocity == null) return;
+    final position = composition.get<PositionComponent>(entity)!;
+    final velocity = composition.get<VelocityComponent>(entity)!;
 
     final deltaSeconds = delta.inMicroseconds / 1000000.0;
 

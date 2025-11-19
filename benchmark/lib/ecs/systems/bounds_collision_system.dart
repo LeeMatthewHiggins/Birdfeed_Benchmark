@@ -12,34 +12,34 @@ final class BoundsCollisionSystem extends EntitySystem {
   @override
   void processEntity(
     Entity entity,
-    Map<Type, SparseList<Component>> componentLists,
+    EntityComposition composition,
     Duration delta,
   ) {
-    final position =
-        componentLists[PositionComponent]?[entity] as PositionComponent?;
-    final velocity =
-        componentLists[VelocityComponent]?[entity] as VelocityComponent?;
-    final bounds =
-        componentLists[BoundsComponent]?[entity] as BoundsComponent?;
-
-    if (position == null || velocity == null || bounds == null) return;
+    final position = composition.get<PositionComponent>(entity)!;
+    final velocity = composition.get<VelocityComponent>(entity)!;
+    final bounds = composition.get<BoundsComponent>(entity)!;
 
     final halfSize = bounds.size / 2;
+    final maxX = bounds.width;
+    final maxY = bounds.height;
 
-    if (position.x - halfSize <= 0) {
+    final posX = position.x;
+    final posY = position.y;
+
+    if (posX - halfSize <= 0) {
       position.x = halfSize;
-      velocity.x = velocity.x.abs();
-    } else if (position.x + halfSize >= bounds.width) {
-      position.x = bounds.width - halfSize;
-      velocity.x = -velocity.x.abs();
+      if (velocity.x < 0) velocity.x = -velocity.x;
+    } else if (posX + halfSize >= maxX) {
+      position.x = maxX - halfSize;
+      if (velocity.x > 0) velocity.x = -velocity.x;
     }
 
-    if (position.y - halfSize <= 0) {
+    if (posY - halfSize <= 0) {
       position.y = halfSize;
-      velocity.y = velocity.y.abs();
-    } else if (position.y + halfSize >= bounds.height) {
-      position.y = bounds.height - halfSize;
-      velocity.y = -velocity.y.abs();
+      if (velocity.y < 0) velocity.y = -velocity.y;
+    } else if (posY + halfSize >= maxY) {
+      position.y = maxY - halfSize;
+      if (velocity.y > 0) velocity.y = -velocity.y;
     }
   }
 }
