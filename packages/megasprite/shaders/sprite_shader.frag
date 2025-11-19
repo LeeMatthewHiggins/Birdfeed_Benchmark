@@ -5,7 +5,7 @@ uniform vec2 uPositionDataSize;
 uniform float uCellsPerRow;
 uniform float uCellDataWidth;
 uniform float uCellSize;
-uniform sampler2D uTexture;
+uniform sampler2D uAtlasTexture;
 uniform sampler2D uPositionData;
 uniform sampler2D uCellCounts;
 
@@ -28,44 +28,35 @@ void main() {
 
   float cellRow = floor(cellIndex / uCellsPerRow);
   float cellCol = mod(cellIndex, uCellsPerRow);
-  float cellU = cellCol * uCellDataWidth;
-  float cellV = cellRow;
+  vec2 cellUV = vec2(cellCol * uCellDataWidth, cellRow);
 
   for (int i = 0; i < kMaxSpritesPerCell; i++) {
     if (float(i) >= cellSpriteCount) break;
 
-    float pixelU = cellU + float(i) * 2.0;
+    float pixelU = cellUV.x + float(i) * 2.0;
     float u1 = (pixelU + 0.5) / uPositionDataSize.x;
     float u2 = (pixelU + 1.5) / uPositionDataSize.x;
-    float v = (cellV + 0.5) / uPositionDataSize.y;
+    float v = (cellUV.y + 0.5) / uPositionDataSize.y;
 
     vec4 aabbData = texture(uPositionData, vec2(u1, v));
     vec4 srcData = texture(uPositionData, vec2(u2, v));
 
-    float minX = (aabbData.r * 255.0) - kSignedByteOffset;
-    float minY = (aabbData.g * 255.0) - kSignedByteOffset;
-    float maxX = (aabbData.b * 255.0) - kSignedByteOffset;
-    float maxY = (aabbData.a * 255.0) - kSignedByteOffset;
+    vec2 aabbMin = (aabbData.rg * 255.0) - kSignedByteOffset;
+    vec2 aabbMax = (aabbData.ba * 255.0) - kSignedByteOffset;
 
-    float srcU = srcData.r;
-    float srcV = srcData.g;
-    float srcW = srcData.b;
-    float srcH = srcData.a;
+    vec2 srcUV = srcData.rg;
+    vec2 srcSize = srcData.ba;
 
-    if (pixelInCell.x >= minX && pixelInCell.x < maxX + 1.0 &&
-        pixelInCell.y >= minY && pixelInCell.y < maxY + 1.0) {
+    if (pixelInCell.x >= aabbMin.x && pixelInCell.x < aabbMax.x + 1.0 &&
+        pixelInCell.y >= aabbMin.y && pixelInCell.y < aabbMax.y + 1.0) {
 
-      float localX = pixelInCell.x - minX;
-      float localY = pixelInCell.y - minY;
+      vec2 localPos = pixelInCell - aabbMin;
+      vec2 spriteSize = aabbMax - aabbMin;
+      vec2 spriteUV = localPos / spriteSize;
 
-      float width = maxX - minX;
-      float height = maxY - minY;
+      vec2 texCoord = srcUV + spriteUV * srcSize;
 
-      vec2 spriteUV = vec2(localX / width, localY / height);
-
-      vec2 texCoord = vec2(srcU, srcV) + spriteUV * vec2(srcW, srcH);
-
-      vec4 texColor = texture(uTexture, texCoord);
+      vec4 texColor = texture(uAtlasTexture, texCoord);
       fragColor = mix(fragColor, texColor, texColor.a);
     }
   }
