@@ -1,19 +1,19 @@
 class SpriteData {
   const SpriteData({
-    required this.minX,
-    required this.minY,
-    required this.maxX,
-    required this.maxY,
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
     required this.atlasMinX,
     required this.atlasMinY,
     required this.atlasMaxX,
     required this.atlasMaxY,
   });
 
-  final double minX;
-  final double minY;
-  final double maxX;
-  final double maxY;
+  final double x;
+  final double y;
+  final double width;
+  final double height;
   final double atlasMinX;
   final double atlasMinY;
   final double atlasMaxX;

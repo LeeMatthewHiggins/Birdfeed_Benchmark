@@ -31,9 +31,6 @@ class SpriteTextureEncoder {
   late final Uint8List _positionPixels;
   late final Uint8List _cellCountPixels;
 
-  static const double _minBound = -128;
-  static const double _maxBound = 127;
-
   Uint8List encodePositionData(
     List<SpriteData?> sprites,
     List<int> actualCounts,
@@ -65,28 +62,13 @@ class SpriteTextureEncoder {
 
           if (sprite == null) continue;
 
-          final originalCellRelativeMinX = sprite.minX - cellTopLeftX;
-          final originalCellRelativeMinY = sprite.minY - cellTopLeftY;
-          final originalCellRelativeMaxX = sprite.maxX - cellTopLeftX;
-          final originalCellRelativeMaxY = sprite.maxY - cellTopLeftY;
+          final cellRelativeX = sprite.x - cellTopLeftX;
+          final cellRelativeY = sprite.y - cellTopLeftY;
 
-          final clampedMinX = originalCellRelativeMinX < _minBound
-              ? _minBound
-              : (originalCellRelativeMinX > _maxBound ? _maxBound : originalCellRelativeMinX);
-          final clampedMinY = originalCellRelativeMinY < _minBound
-              ? _minBound
-              : (originalCellRelativeMinY > _maxBound ? _maxBound : originalCellRelativeMinY);
-          final clampedMaxX = originalCellRelativeMaxX < _minBound
-              ? _minBound
-              : (originalCellRelativeMaxX > _maxBound ? _maxBound : originalCellRelativeMaxX);
-          final clampedMaxY = originalCellRelativeMaxY < _minBound
-              ? _minBound
-              : (originalCellRelativeMaxY > _maxBound ? _maxBound : originalCellRelativeMaxY);
-
-          final byteMinX = (clampedMinX + MegaSpriteConfig.signedByteOffset).round();
-          final byteMinY = (clampedMinY + MegaSpriteConfig.signedByteOffset).round();
-          final byteMaxX = (clampedMaxX + MegaSpriteConfig.signedByteOffset).round();
-          final byteMaxY = (clampedMaxY + MegaSpriteConfig.signedByteOffset).round();
+          final byteX = (cellRelativeX + MegaSpriteConfig.signedByteOffset).round().clamp(0, 255);
+          final byteY = (cellRelativeY + MegaSpriteConfig.signedByteOffset).round().clamp(0, 255);
+          final byteWidth = sprite.width.round().clamp(0, 255);
+          final byteHeight = sprite.height.round().clamp(0, 255);
 
           final atlasMinX = sprite.atlasMinX.round().clamp(0, 65535);
           final atlasMinY = sprite.atlasMinY.round().clamp(0, 65535);
@@ -97,22 +79,22 @@ class SpriteTextureEncoder {
           final pixelV = cellV;
           final pixelIndex = (pixelV * layout.textureWidth + pixelU) * 4;
 
-          pixels[pixelIndex] = byteMinX;
-          pixels[pixelIndex + 1] = byteMinY;
-          pixels[pixelIndex + 2] = byteMaxX;
-          pixels[pixelIndex + 3] = byteMaxY;
+          pixels[pixelIndex] = byteX;
+          pixels[pixelIndex + 1] = byteY;
+          pixels[pixelIndex + 2] = byteWidth;
+          pixels[pixelIndex + 3] = byteHeight;
 
           final pixelIndex2 = pixelIndex + 4;
-          pixels[pixelIndex2] = atlasMinX & 0xFF;
-          pixels[pixelIndex2 + 1] = (atlasMinX >> 8) & 0xFF;
-          pixels[pixelIndex2 + 2] = atlasMinY & 0xFF;
-          pixels[pixelIndex2 + 3] = (atlasMinY >> 8) & 0xFF;
+          pixels[pixelIndex2] = atlasMinX % 256;
+          pixels[pixelIndex2 + 1] = atlasMinX ~/ 256;
+          pixels[pixelIndex2 + 2] = atlasMinY % 256;
+          pixels[pixelIndex2 + 3] = atlasMinY ~/ 256;
 
           final pixelIndex3 = pixelIndex + 8;
-          pixels[pixelIndex3] = atlasMaxX & 0xFF;
-          pixels[pixelIndex3 + 1] = (atlasMaxX >> 8) & 0xFF;
-          pixels[pixelIndex3 + 2] = atlasMaxY & 0xFF;
-          pixels[pixelIndex3 + 3] = (atlasMaxY >> 8) & 0xFF;
+          pixels[pixelIndex3] = atlasMaxX % 256;
+          pixels[pixelIndex3 + 1] = atlasMaxX ~/ 256;
+          pixels[pixelIndex3 + 2] = atlasMaxY % 256;
+          pixels[pixelIndex3 + 3] = atlasMaxY ~/ 256;
 
           encodedCount++;
         }

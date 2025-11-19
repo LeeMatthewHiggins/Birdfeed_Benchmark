@@ -159,14 +159,14 @@ class MegaSpritePainter extends CustomPainter {
 
       final halfSize = sprite.width / 2;
       spriteDataList[i] = SpriteData(
-        minX: sprite.x - halfSize,
-        minY: sprite.y - halfSize,
-        maxX: sprite.x + halfSize,
-        maxY: sprite.y + halfSize,
+        x: sprite.x - halfSize,
+        y: sprite.y - halfSize,
+        width: sprite.width,
+        height: sprite.width,
         atlasMinX: sprite.sourceRect.left,
         atlasMinY: sprite.sourceRect.top,
-        atlasMaxX: sprite.sourceRect.right,
-        atlasMaxY: sprite.sourceRect.bottom,
+        atlasMaxX: sprite.sourceRect.right - 1,
+        atlasMaxY: sprite.sourceRect.bottom - 1,
       );
     }
 

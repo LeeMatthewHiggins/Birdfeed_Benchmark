@@ -20,12 +20,13 @@ class SpriteTextureLayout {
     final totalPixelsNeeded = cellDataWidth * totalCells;
     final approxSide = sqrt(totalPixelsNeeded);
 
-    textureWidth = _nextPowerOf2(approxSide.ceil());
+    var width = _nextPowerOf2(approxSide.ceil());
 
-    if (textureWidth < cellDataWidth) {
-      textureWidth = _nextPowerOf2(cellDataWidth);
+    if (width < cellDataWidth) {
+      width = _nextPowerOf2(cellDataWidth);
     }
 
+    textureWidth = width;
     cellsPerRow = textureWidth ~/ cellDataWidth;
 
     final rowsNeeded = (totalCells / cellsPerRow).ceil();

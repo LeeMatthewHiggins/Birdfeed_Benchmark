@@ -39,31 +39,63 @@ void main() {
     float u3 = (pixelU + 2.5) / uPositionDataSize.x;
     float v = (cellUV.y + 0.5) / uPositionDataSize.y;
 
-    vec4 aabbData = texture(uPositionData, vec2(u1, v));
+    vec4 posData = texture(uPositionData, vec2(u1, v));
     vec4 atlasMinData = texture(uPositionData, vec2(u2, v));
     vec4 atlasMaxData = texture(uPositionData, vec2(u3, v));
 
-    vec2 aabbMin = (aabbData.rg * 255.0) - kSignedByteOffset;
-    vec2 aabbMax = (aabbData.ba * 255.0) - kSignedByteOffset;
+    vec2 spritePos = (posData.rg * 255.0) - kSignedByteOffset;
+    vec2 spriteSize = posData.ba * 255.0;
+
+    vec2 spriteMin = spritePos;
+    vec2 spriteMax = spritePos + spriteSize;
 
     vec2 atlasMin = vec2(
-      atlasMinData.r + atlasMinData.g * 256.0,
-      atlasMinData.b + atlasMinData.a * 256.0
+      atlasMinData.r * 255.0 + atlasMinData.g * 255.0 * 256.0,
+      atlasMinData.b * 255.0 + atlasMinData.a * 255.0 * 256.0
     );
     vec2 atlasMax = vec2(
-      atlasMaxData.r + atlasMaxData.g * 256.0,
-      atlasMaxData.b + atlasMaxData.a * 256.0
+      atlasMaxData.r * 255.0 + atlasMaxData.g * 255.0 * 256.0,
+      atlasMaxData.b * 255.0 + atlasMaxData.a * 255.0 * 256.0
     );
 
-    if (pixelInCell.x >= aabbMin.x && pixelInCell.x < aabbMax.x + 1.0 &&
-        pixelInCell.y >= aabbMin.y && pixelInCell.y < aabbMax.y + 1.0) {
+    vec2 cellMin = vec2(0.0);
+    vec2 cellMax = vec2(uCellSize);
+
+    vec2 aabbMin = max(spriteMin, cellMin);
+    vec2 aabbMax = min(spriteMax, cellMax);
+
+    if (pixelInCell.x >= aabbMin.x && pixelInCell.x < aabbMax.x &&
+        pixelInCell.y >= aabbMin.y && pixelInCell.y < aabbMax.y) {
+
+      vec2 clippedOffsetMin = aabbMin - spriteMin;
+      vec2 clippedOffsetMax = spriteMax - aabbMax;
+
+      vec2 atlasRange = atlasMax - atlasMin + vec2(1.0);
+      vec2 atlasClipMin = vec2(0.0);
+      vec2 atlasClipMax = vec2(0.0);
+
+      if (spriteSize.x > 0.0) {
+        atlasClipMin.x = (clippedOffsetMin.x / spriteSize.x) * atlasRange.x;
+        atlasClipMax.x = (clippedOffsetMax.x / spriteSize.x) * atlasRange.x;
+      }
+      if (spriteSize.y > 0.0) {
+        atlasClipMin.y = (clippedOffsetMin.y / spriteSize.y) * atlasRange.y;
+        atlasClipMax.y = (clippedOffsetMax.y / spriteSize.y) * atlasRange.y;
+      }
+
+      vec2 clippedAtlasMin = atlasMin + atlasClipMin;
+      vec2 clippedAtlasMax = atlasMax + vec2(1.0) - atlasClipMax;
 
       vec2 localPos = pixelInCell - aabbMin;
-      vec2 spriteSize = aabbMax - aabbMin;
-      vec2 spriteUV = localPos / spriteSize;
+      vec2 aabbSize = aabbMax - aabbMin;
+      vec2 atlasPixelRange = clippedAtlasMax - clippedAtlasMin;
 
-      vec2 atlasSize = atlasMax - atlasMin;
-      vec2 texCoord = (atlasMin + spriteUV * atlasSize) / uAtlasSize;
+      vec2 spriteUV = vec2(0.5);
+      if (aabbSize.x > 0.0) spriteUV.x = localPos.x / aabbSize.x;
+      if (aabbSize.y > 0.0) spriteUV.y = localPos.y / aabbSize.y;
+
+      vec2 atlasPixel = clippedAtlasMin + spriteUV * atlasPixelRange;
+      vec2 texCoord = (atlasPixel + vec2(0.5)) / uAtlasSize;
 
       vec4 texColor = texture(uAtlasTexture, texCoord);
       fragColor = mix(fragColor, texColor, texColor.a);
