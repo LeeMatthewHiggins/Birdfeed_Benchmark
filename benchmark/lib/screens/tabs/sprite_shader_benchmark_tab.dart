@@ -57,6 +57,17 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
     return success;
   }
 
+  Future<void> _handleGenerateEmojiAtlas() async {
+    final success = await _spriteShaderService.generateEmojiAtlas();
+
+    if (success && mounted) {
+      setState(() {
+        _loadedFileName = _spriteShaderService.loadedFileName;
+      });
+      widget.fpsTracker.reset();
+    }
+  }
+
   void _handleInstanceCountChanged(int count) {
     setState(() {
       _instanceCount = count;
@@ -83,18 +94,30 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FileDropZone(
-          onFileDropped: _handleFileDropped,
-          allowedExtensions: const [
-            '.png',
-            '.jpg',
-            '.jpeg',
-            '.webp',
-            '.gif',
-            '.bmp',
-            '.wbmp',
+        Row(
+          children: [
+            Expanded(
+              child: FileDropZone(
+                onFileDropped: _handleFileDropped,
+                allowedExtensions: const [
+                  '.png',
+                  '.jpg',
+                  '.jpeg',
+                  '.webp',
+                  '.gif',
+                  '.bmp',
+                  '.wbmp',
+                ],
+                fileName: _loadedFileName,
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              onPressed: _handleGenerateEmojiAtlas,
+              icon: const Icon(Icons.emoji_emotions),
+              label: const Text('Generate Emoji Atlas'),
+            ),
           ],
-          fileName: _loadedFileName,
         ),
         const SizedBox(height: 16),
         InstanceCountSlider(
@@ -163,6 +186,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
                 cellSize: _cellSize,
                 showDebugOverlay: _showDebugOverlay,
                 spriteSize: _spriteSize,
+                spriteRects: _spriteShaderService.spriteRects,
               )
             else
               const Center(

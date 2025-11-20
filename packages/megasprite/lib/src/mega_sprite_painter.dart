@@ -52,14 +52,18 @@ class MegaSpritePainter extends CustomPainter {
       return;
     }
 
-    final currentPosTexture = _useTextureA ? _positionTextureA : _positionTextureB;
-    final currentCountTexture = _useTextureA ? _cellCountTextureA : _cellCountTextureB;
+    final currentPosTexture =
+        _useTextureA ? _positionTextureA : _positionTextureB;
+    final currentCountTexture =
+        _useTextureA ? _cellCountTextureA : _cellCountTextureB;
 
     if (!_isCreatingTexture) {
       _createTextures(size);
     }
 
-    if (currentPosTexture == null || currentCountTexture == null || _layout == null) {
+    if (currentPosTexture == null ||
+        currentCountTexture == null ||
+        _layout == null) {
       return;
     }
 
@@ -196,7 +200,8 @@ class MegaSpritePainter extends CustomPainter {
       );
     }
 
-    final positionPixels = _encoder!.encodePositionData(spriteDataList, actualCounts);
+    final positionPixels =
+        _encoder!.encodePositionData(spriteDataList, actualCounts);
     final cellCountPixels = _encoder!.encodeCellCountData(actualCounts);
 
     final totalSprites = actualCounts.reduce((a, b) => a + b);

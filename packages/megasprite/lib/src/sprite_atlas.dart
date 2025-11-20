@@ -38,6 +38,15 @@ class SpriteAtlas {
     return SpriteAtlas(image: image, shader: shader);
   }
 
+  static Future<SpriteAtlas> fromImage(ui.Image image) async {
+    final program = await ui.FragmentProgram.fromAsset(
+      'packages/megasprite/shaders/sprite_shader.frag',
+    );
+    final shader = program.fragmentShader();
+
+    return SpriteAtlas(image: image, shader: shader);
+  }
+
   static Future<Uint8List> _loadAssetBytes(String assetPath) async {
     final byteData = await rootBundle.load(assetPath);
     return byteData.buffer.asUint8List();

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/ecs/components/sprite_rect_component.dart';
 import 'package:benchmark/ecs/components/sprite_shader_content_component.dart';
@@ -17,6 +19,7 @@ class MegaSpriteRenderer extends StatefulWidget {
     required this.cellSize,
     required this.showDebugOverlay,
     required this.spriteSize,
+    this.spriteRects,
     super.key,
   });
 
@@ -27,6 +30,7 @@ class MegaSpriteRenderer extends StatefulWidget {
   final int cellSize;
   final bool showDebugOverlay;
   final int spriteSize;
+  final List<Rect>? spriteRects;
 
   @override
   State<MegaSpriteRenderer> createState() => _MegaSpriteRendererState();
@@ -161,9 +165,8 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     final atlas = widget.atlas;
     if (atlas == null) return;
 
-    final imageWidth = atlas.image.width.toDouble();
-    final imageHeight = atlas.image.height.toDouble();
-    final sourceRect = Rect.fromLTWH(0, 0, imageWidth, imageHeight);
+    final spriteRects = widget.spriteRects;
+    final random = Random();
 
     final content = SpriteShaderContentComponent(
       image: atlas.image,
@@ -171,6 +174,15 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     );
 
     for (var i = 0; i < widget.instanceCount; i++) {
+      final Rect sourceRect;
+      if (spriteRects != null && spriteRects.isNotEmpty) {
+        sourceRect = spriteRects[random.nextInt(spriteRects.length)];
+      } else {
+        final imageWidth = atlas.image.width.toDouble();
+        final imageHeight = atlas.image.height.toDouble();
+        sourceRect = Rect.fromLTWH(0, 0, imageWidth, imageHeight);
+      }
+
       final entity = widget.world.createSpriteShaderEntity(
         content: content,
         spriteRect: SpriteRectComponent(sourceRect: sourceRect),

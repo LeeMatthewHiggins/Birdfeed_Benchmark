@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class InstanceCountSlider extends StatelessWidget {
+class InstanceCountSlider extends StatefulWidget {
   const InstanceCountSlider({
     required this.instanceCount,
     required this.onChanged,
@@ -10,8 +10,28 @@ class InstanceCountSlider extends StatelessWidget {
   final int instanceCount;
   final ValueChanged<int> onChanged;
 
+  @override
+  State<InstanceCountSlider> createState() => _InstanceCountSliderState();
+}
+
+class _InstanceCountSliderState extends State<InstanceCountSlider> {
   static const int _minInstances = 1;
   static const int _maxInstances = 50000;
+  late double _currentValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentValue = widget.instanceCount.toDouble();
+  }
+
+  @override
+  void didUpdateWidget(InstanceCountSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.instanceCount != widget.instanceCount) {
+      _currentValue = widget.instanceCount.toDouble();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +49,7 @@ class InstanceCountSlider extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              instanceCount.toString(),
+              _currentValue.toInt().toString(),
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -43,11 +63,18 @@ class InstanceCountSlider extends StatelessWidget {
           children: [
             Expanded(
               child: Slider(
-                value: instanceCount.toDouble(),
+                value: _currentValue,
                 min: _minInstances.toDouble(),
                 max: _maxInstances.toDouble(),
                 divisions: 100,
-                onChanged: (value) => onChanged(value.toInt()),
+                onChanged: (value) {
+                  setState(() {
+                    _currentValue = value;
+                  });
+                },
+                onChangeEnd: (value) {
+                  widget.onChanged(value.toInt());
+                },
               ),
             ),
             const SizedBox(width: 8),
