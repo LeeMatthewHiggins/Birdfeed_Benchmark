@@ -1,11 +1,10 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:megasprite/src/cell_binner.dart';
 import 'package:megasprite/src/sprite.dart';
 import 'package:megasprite/src/sprite_atlas.dart';
 import 'package:megasprite/src/sprite_data.dart';
 import 'package:megasprite/src/sprite_metrics.dart';
+import 'package:megasprite/src/texture_buffer.dart';
 import 'package:megasprite/src/texture_encoder.dart';
 import 'package:megasprite/src/texture_layout.dart';
 
@@ -25,11 +24,9 @@ class MegaSpritePainter extends CustomPainter {
   final void Function()? onBeforePaint;
   final void Function(SpriteMetrics)? onMetricsUpdate;
 
-  ui.Image? _positionTextureA;
-  ui.Image? _positionTextureB;
-  ui.Image? _cellCountTextureA;
-  ui.Image? _cellCountTextureB;
-  bool _useTextureA = true;
+  final _positionBuffer = TextureBuffer();
+  final _cellCountBuffer = TextureBuffer();
+
   bool _isCreatingTexture = false;
   int _maxGridColumns = 0;
   int _maxGridRows = 0;
@@ -52,10 +49,8 @@ class MegaSpritePainter extends CustomPainter {
       return;
     }
 
-    final currentPosTexture =
-        _useTextureA ? _positionTextureA : _positionTextureB;
-    final currentCountTexture =
-        _useTextureA ? _cellCountTextureA : _cellCountTextureB;
+    final currentPosTexture = _positionBuffer.current;
+    final currentCountTexture = _cellCountBuffer.current;
 
     if (!_isCreatingTexture) {
       _createTextures(size);
@@ -97,18 +92,6 @@ class MegaSpritePainter extends CustomPainter {
     );
   }
 
-  void _swapTextures(ui.Image positionTexture, ui.Image cellCountTexture) {
-    if (_useTextureA) {
-      _positionTextureB = positionTexture;
-      _cellCountTextureB = cellCountTexture;
-    } else {
-      _positionTextureA = positionTexture;
-      _cellCountTextureA = cellCountTexture;
-    }
-    _useTextureA = !_useTextureA;
-    _isCreatingTexture = false;
-  }
-
   void _createTextures(Size canvasSize) {
     _isCreatingTexture = true;
 
@@ -121,14 +104,8 @@ class MegaSpritePainter extends CustomPainter {
       _maxGridRows = gridRows;
       _maxTotalCells = totalCells;
       _layout = SpriteTextureLayout(totalCells: totalCells);
-      _positionTextureA?.dispose();
-      _positionTextureB?.dispose();
-      _cellCountTextureA?.dispose();
-      _cellCountTextureB?.dispose();
-      _positionTextureA = null;
-      _positionTextureB = null;
-      _cellCountTextureA = null;
-      _cellCountTextureB = null;
+      _positionBuffer.dispose();
+      _cellCountBuffer.dispose();
       _binner = null;
       _actualCounts = null;
     }
@@ -220,34 +197,20 @@ class MegaSpritePainter extends CustomPainter {
       ),
     );
 
-    ui.Image? newPositionTexture;
-    ui.Image? newCellCountTexture;
-
-    ui.decodeImageFromPixels(
-      positionPixels,
-      layout.dataTextureWidth,
-      layout.dataTextureHeight,
-      ui.PixelFormat.rgba8888,
-      (image) {
-        newPositionTexture = image;
-        if (newCellCountTexture != null) {
-          _swapTextures(newPositionTexture!, newCellCountTexture!);
-        }
-      },
-    );
-
-    ui.decodeImageFromPixels(
-      cellCountPixels,
-      _maxGridColumns,
-      _maxGridRows,
-      ui.PixelFormat.rgba8888,
-      (image) {
-        newCellCountTexture = image;
-        if (newPositionTexture != null) {
-          _swapTextures(newPositionTexture!, newCellCountTexture!);
-        }
-      },
-    );
+    Future.wait([
+      _positionBuffer.update(
+        positionPixels,
+        layout.dataTextureWidth,
+        layout.dataTextureHeight,
+      ),
+      _cellCountBuffer.update(
+        cellCountPixels,
+        _maxGridColumns,
+        _maxGridRows,
+      ),
+    ]).then((_) {
+      _isCreatingTexture = false;
+    });
   }
 
   @override
