@@ -11,6 +11,8 @@ class SpriteAtlas {
   final ui.Image image;
   final ui.FragmentShader shader;
 
+  ui.Image cloneImage() => image.clone();
+
   static Future<SpriteAtlas> fromAsset(String assetPath) async {
     final program = await ui.FragmentProgram.fromAsset(
       'packages/megasprite/shaders/sprite_shader.frag',

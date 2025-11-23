@@ -17,22 +17,40 @@ class SpriteTextureLayout {
     cellDataWidth =
         MegaSpriteConfig.maxSpritesPerCell * MegaSpriteConfig.pixelsPerSprite;
 
-    // Use fixed width based on platform
-    // Web: 4096, Native: 8192
-    dataTextureWidth = kIsWeb ? 4096 : 8192;
-
     // Calculate total pixels needed for all cells
     final totalPixelsNeeded = totalCells * cellDataWidth;
 
-    // Calculate height needed (round up)
-    dataTextureHeight = (totalPixelsNeeded / dataTextureWidth).ceil();
+    // Find the most square texture dimensions
+    const maxDimension = kIsWeb ? 4096 : 8192;
 
-    // Cap height at platform limits
-    if (kIsWeb && dataTextureHeight > 4096) {
-      dataTextureHeight = 4096;
-    } else if (dataTextureHeight > 8192) {
-      dataTextureHeight = 8192;
+    // Try different widths to find the most square aspect ratio
+    var bestWidth = maxDimension;
+    var bestHeight = maxDimension;
+    var bestAspectRatio = double.infinity;
+
+    final widths = kIsWeb
+        ? [256, 512, 1024, 2048, 4096]
+        : [256, 512, 1024, 2048, 4096, 8192];
+
+    for (final width in widths) {
+      final height = (totalPixelsNeeded / width).ceil();
+
+      // Skip if height exceeds platform limit
+      if (height > maxDimension) continue;
+
+      // Calculate aspect ratio (always >= 1.0)
+      final aspectRatio = height > width ? height / width : width / height;
+
+      // Prefer more square textures
+      if (aspectRatio < bestAspectRatio) {
+        bestAspectRatio = aspectRatio;
+        bestWidth = width;
+        bestHeight = height;
+      }
     }
+
+    dataTextureWidth = bestWidth;
+    dataTextureHeight = bestHeight;
   }
 
   // Get linear pixel offset for a cell's data

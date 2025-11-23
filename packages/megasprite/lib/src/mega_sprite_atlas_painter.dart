@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:megasprite/src/sprite.dart';
@@ -18,9 +19,9 @@ class MegaSpriteAtlasPainter extends CustomPainter {
   final SpriteAtlas atlas;
   final Paint _paint = Paint();
 
-  // Buffers to avoid allocation
   Float32List _transforms = Float32List(0);
   Float32List _rects = Float32List(0);
+  ui.Image? _clonedImage;
 
   void _ensureBuffers(int count) {
     if (_transforms.length != count * 4) {
@@ -34,6 +35,8 @@ class MegaSpriteAtlasPainter extends CustomPainter {
     onBeforePaint?.call();
     if (sprites.isEmpty) return;
 
+    _clonedImage ??= atlas.image.clone();
+
     _ensureBuffers(sprites.length);
 
     var tIndex = 0;
@@ -42,14 +45,11 @@ class MegaSpriteAtlasPainter extends CustomPainter {
     for (final sprite in sprites) {
       final scale = sprite.rect.width / sprite.sourceRect.width;
 
-      // RSTransform(scos, ssin, tx, ty)
-      // sprite.rect.left/top now represents top-left corner
       _transforms[tIndex++] = scale;
       _transforms[tIndex++] = 0;
       _transforms[tIndex++] = sprite.rect.left;
       _transforms[tIndex++] = sprite.rect.top;
 
-      // Rect(left, top, right, bottom)
       final src = sprite.sourceRect;
       _rects[rIndex++] = src.left;
       _rects[rIndex++] = src.top;
@@ -58,7 +58,7 @@ class MegaSpriteAtlasPainter extends CustomPainter {
     }
 
     canvas.drawRawAtlas(
-      atlas.image,
+      _clonedImage!,
       _transforms,
       _rects,
       null,
@@ -68,7 +68,17 @@ class MegaSpriteAtlasPainter extends CustomPainter {
     );
   }
 
+  void dispose() {
+    _clonedImage?.dispose();
+    _clonedImage = null;
+  }
+
   @override
-  bool shouldRepaint(MegaSpriteAtlasPainter oldDelegate) =>
-      oldDelegate.sprites != sprites || oldDelegate.atlas != atlas;
+  bool shouldRepaint(MegaSpriteAtlasPainter oldDelegate) {
+    if (oldDelegate.atlas != atlas) {
+      _clonedImage?.dispose();
+      _clonedImage = null;
+    }
+    return oldDelegate.sprites != sprites || oldDelegate.atlas != atlas;
+  }
 }

@@ -82,9 +82,17 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
         oldWidget.spriteSize != widget.spriteSize ||
         oldWidget.atlas != widget.atlas) {
       _debugMetrics = null;
-      _painter = null;
+      _disposePainter();
       _generateParticles();
     }
+  }
+
+  void _disposePainter() {
+    final painter = _painter;
+    if (painter is MegaSpriteAtlasPainter) {
+      painter.dispose();
+    }
+    _painter = null;
   }
 
   void _updateSprites() {
@@ -104,7 +112,6 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
 
       if (position == null || spriteRect == null) continue;
 
-      // Position is center, convert to top-left for sprite.rect
       final spriteSize = widget.spriteSize.toDouble();
       final left = position.x - spriteSize / 2;
       final top = position.y - spriteSize / 2;
@@ -163,6 +170,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
   @override
   void dispose() {
     _animationController.dispose();
+    _disposePainter();
     for (final entity in _entities) {
       widget.world.destroyEntity(entity);
     }

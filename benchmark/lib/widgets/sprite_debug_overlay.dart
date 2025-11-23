@@ -40,11 +40,11 @@ class SpriteDebugOverlay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildMetric(
-                    'Grid', '${metrics.gridColumns}x${metrics.gridRows}'),
+                    'Grid', '${metrics.gridColumns}x${metrics.gridRows}',),
                 _buildMetric('Data Texture',
-                    '${metrics.positionTextureWidth}x${metrics.positionTextureHeight}'),
+                    '${metrics.positionTextureWidth}x${metrics.positionTextureHeight}',),
                 _buildMetric(
-                    'Avg/Cell', metrics.avgSpritesPerCell.toStringAsFixed(1)),
+                    'Avg/Cell', metrics.avgSpritesPerCell.toStringAsFixed(1),),
                 _buildMetric('Max/Cell', '${metrics.maxSpritesPerCell}'),
               ],
             ),
