@@ -168,6 +168,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
                 instanceCount: _instanceCount,
                 world: _world,
                 atlas: _spriteShaderService.atlas,
+                shader: _spriteShaderService.shader,
                 fpsTracker: widget.fpsTracker,
                 cellSize: _cellSize,
                 showDebugOverlay: _showDebugOverlay,

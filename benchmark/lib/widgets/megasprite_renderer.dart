@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:benchmark/ecs/benchmark_world.dart';
 import 'package:benchmark/ecs/components/sprite_rect_component.dart';
@@ -17,6 +18,7 @@ class MegaSpriteRenderer extends StatefulWidget {
     required this.atlas,
     required this.fpsTracker,
     required this.spriteSize,
+    this.shader,
     this.cellSize = 32,
     this.showDebugOverlay = false,
     this.painterType = MegaSpritePainterType.shader,
@@ -27,6 +29,7 @@ class MegaSpriteRenderer extends StatefulWidget {
   final int instanceCount;
   final BenchmarkWorld world;
   final SpriteAtlas? atlas;
+  final ui.FragmentShader? shader;
   final FpsTracker fpsTracker;
   final int cellSize;
   final bool showDebugOverlay;
@@ -138,9 +141,13 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     }
 
     if (widget.painterType == MegaSpritePainterType.shader) {
+      final shader = widget.shader;
+      if (shader == null) return null;
+
       return _painter ??= MegaSpriteShaderPainter(
         sprites: _sprites,
         atlas: widget.atlas!,
+        shader: shader,
         cellSize: widget.cellSize,
         onBeforePaint: _updateSprites,
         onMetricsUpdate: (metrics) {
@@ -194,9 +201,12 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     final spriteRects = widget.spriteRects;
     final random = Random();
 
+    final shader = widget.shader;
+    if (shader == null) return;
+
     final content = SpriteShaderContentComponent(
       image: atlas.image,
-      shader: atlas.shader,
+      shader: shader,
     );
 
     for (var i = 0; i < widget.instanceCount; i++) {

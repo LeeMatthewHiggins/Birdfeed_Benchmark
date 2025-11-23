@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:megasprite/src/cell_binner.dart';
 import 'package:megasprite/src/sprite.dart';
@@ -12,6 +14,7 @@ class MegaSpriteShaderPainter extends CustomPainter {
   MegaSpriteShaderPainter({
     required this.sprites,
     required this.atlas,
+    required this.shader,
     required this.cellSize,
     this.onBeforePaint,
     this.onMetricsUpdate,
@@ -20,6 +23,7 @@ class MegaSpriteShaderPainter extends CustomPainter {
 
   final List<Sprite> sprites;
   final SpriteAtlas atlas;
+  final ui.FragmentShader shader;
   final int cellSize;
   final void Function()? onBeforePaint;
   final void Function(SpriteMetrics)? onMetricsUpdate;
@@ -68,7 +72,7 @@ class MegaSpriteShaderPainter extends CustomPainter {
       _cachedGridRows = (size.height / cellSize).ceil();
     }
 
-    final shader = atlas.shader
+    final shaderInstance = shader
       ..setFloat(0, size.width)
       ..setFloat(1, size.height)
       ..setFloat(2, _cachedGridColumns.toDouble())
@@ -83,7 +87,7 @@ class MegaSpriteShaderPainter extends CustomPainter {
       ..setImageSampler(1, currentPosTexture)
       ..setImageSampler(2, currentCountTexture);
 
-    _paint.shader = shader;
+    _paint.shader = shaderInstance;
 
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
@@ -213,5 +217,6 @@ class MegaSpriteShaderPainter extends CustomPainter {
   bool shouldRepaint(MegaSpriteShaderPainter oldDelegate) =>
       oldDelegate.sprites != sprites ||
       oldDelegate.cellSize != cellSize ||
-      oldDelegate.atlas != atlas;
+      oldDelegate.atlas != atlas ||
+      oldDelegate.shader != shader;
 }

@@ -133,6 +133,7 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
                 instanceCount: _instanceCount,
                 world: _world,
                 atlas: _spriteShaderService.atlas,
+                shader: _spriteShaderService.shader,
                 fpsTracker: widget.fpsTracker,
                 spriteSize: 64,
                 painterType: MegaSpritePainterType.atlas,
