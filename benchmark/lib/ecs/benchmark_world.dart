@@ -49,8 +49,8 @@ final class BenchmarkWorld {
   final Random _random = Random();
 
   static const double _instanceSize = 100;
-  static const double _minVelocity = 50;
-  static const double _maxVelocity = 200;
+  static const double _minVelocity = 20;
+  static const double _maxVelocity = 400;
 
   double _randomVelocity() {
     return (_minVelocity + _random.nextDouble() * (_maxVelocity - _minVelocity)) *

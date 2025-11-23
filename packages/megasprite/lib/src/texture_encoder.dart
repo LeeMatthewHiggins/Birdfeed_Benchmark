@@ -41,7 +41,6 @@ class SpriteTextureEncoder {
     final gridRows = binner.gridRows;
     final cellSize = binner.cellSize;
     final cellBins = binner.cellBins;
-    final cellDataWidth = layout.cellDataWidth;
     final dataTextureWidth = layout.dataTextureWidth;
     const maxSprites = MegaSpriteConfig.maxSpritesPerCell;
     const pixelsPerSprite = MegaSpriteConfig.pixelsPerSprite;
@@ -78,12 +77,8 @@ class SpriteTextureEncoder {
           final atlasWidth = sprite.atlasWidth.toInt();
           final atlasHeight = sprite.atlasHeight.toInt();
 
-          // Linear pixel offset: cellIndex * cellDataWidth + spriteIndex * pixelsPerSprite
-          final linearPixelOffset =
-              cellIndex * cellDataWidth + (encodedCount * pixelsPerSprite);
-          // Convert to 2D texture coordinates
-          final pixelU = linearPixelOffset % dataTextureWidth;
-          final pixelV = linearPixelOffset ~/ dataTextureWidth;
+          final pixelU = encodedCount * pixelsPerSprite;
+          final pixelV = cellIndex;
           final pixelBase = (pixelV * dataTextureWidth + pixelU) * 4;
 
           pixels[pixelBase] = byteX;

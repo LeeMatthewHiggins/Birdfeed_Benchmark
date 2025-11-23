@@ -49,10 +49,15 @@ class TextureBuffer {
     return frame.image;
   }
 
-  void dispose() {
+  void clear() {
     _textureA?.dispose();
     _textureB?.dispose();
     _textureA = null;
     _textureB = null;
+    _useTextureA = true;
+  }
+
+  void dispose() {
+    clear();
   }
 }

@@ -26,19 +26,13 @@ void main() {
   float cellSpriteCount = texture(uCellCounts, cellCountUV).r * 255.0;
 
   for (int i = 0; i < kMaxSpritesPerCell; i++) {
-    // Early exit if we've processed all sprites in this cell
     if (float(i) >= cellSpriteCount) break;
-    
-    // Early exit if pixel is already fully opaque
+
     if (fragColor.a >= 0.99) break;
 
-    // Linear pixel offset: cellIndex * cellDataWidth + spriteIndex * 3
-    float linearPixelOffset = cellIndex * uCellDataWidth + float(i) * 3.0;
-    
-    // Convert to 2D texture coordinates
-    float pixelU = mod(linearPixelOffset, uPositionDataSize.x);
-    float pixelV = floor(linearPixelOffset / uPositionDataSize.x);
-    
+    float pixelU = float(i) * 3.0;
+    float pixelV = cellIndex;
+
     float u1 = (pixelU + 0.5) / uPositionDataSize.x;
     float u2 = (pixelU + 1.5) / uPositionDataSize.x;
     float u3 = (pixelU + 2.5) / uPositionDataSize.x;

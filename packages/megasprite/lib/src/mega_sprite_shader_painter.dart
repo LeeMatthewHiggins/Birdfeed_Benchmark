@@ -107,8 +107,8 @@ class MegaSpriteShaderPainter extends CustomPainter {
       _maxGridRows = gridRows;
       _maxTotalCells = totalCells;
       _layout = SpriteTextureLayout(totalCells: totalCells);
-      _positionBuffer.dispose();
-      _cellCountBuffer.dispose();
+      _positionBuffer.clear();
+      _cellCountBuffer.clear();
       _binner = null;
       _actualCounts = null;
     }
@@ -144,6 +144,10 @@ class MegaSpriteShaderPainter extends CustomPainter {
 
     for (var i = 0; i < sprites.length; i++) {
       final sprite = sprites[i];
+
+      if (sprite.rect.width <= 0 || sprite.rect.height <= 0) {
+        continue;
+      }
 
       binner.binSprite(
         spriteIndex: i,
@@ -210,7 +214,16 @@ class MegaSpriteShaderPainter extends CustomPainter {
       ),
     ]).then((_) {
       _isCreatingTexture = false;
+    }).catchError((Object error, StackTrace stackTrace) {
+      _isCreatingTexture = false;
+      Error.throwWithStackTrace(error, stackTrace);
     });
+  }
+
+  void dispose() {
+    _positionBuffer.dispose();
+    _cellCountBuffer.dispose();
+    _paint.shader = null;
   }
 
   @override
