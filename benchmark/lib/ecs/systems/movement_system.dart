@@ -1,7 +1,6 @@
-import 'package:dentity/dentity.dart';
-
 import 'package:benchmark/ecs/components/position_component.dart';
 import 'package:benchmark/ecs/components/velocity_component.dart';
+import 'package:dentity/dentity.dart';
 
 final class MovementSystem extends EntitySystem {
   @override
@@ -10,11 +9,11 @@ final class MovementSystem extends EntitySystem {
   @override
   void processEntity(
     Entity entity,
-    EntityComposition composition,
+    ComponentManagerReadOnlyInterface componentManager,
     Duration delta,
   ) {
-    final position = composition.get<PositionComponent>(entity)!;
-    final velocity = composition.get<VelocityComponent>(entity)!;
+    final position = componentManager.getComponent<PositionComponent>(entity)!;
+    final velocity = componentManager.getComponent<VelocityComponent>(entity)!;
 
     final deltaSeconds = delta.inMicroseconds / 1000000.0;
 

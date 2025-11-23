@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   cupertino_icons: ^1.0.8
-  dentity: ^1.8.0
+  dentity: ^1.9.0
   desktop_drop: ^0.7.0
   file_picker: ^8.1.6
   flutter:

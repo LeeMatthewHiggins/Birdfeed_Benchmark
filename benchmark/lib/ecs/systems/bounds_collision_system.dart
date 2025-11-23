@@ -1,8 +1,7 @@
-import 'package:dentity/dentity.dart';
-
 import 'package:benchmark/ecs/components/bounds_component.dart';
 import 'package:benchmark/ecs/components/position_component.dart';
 import 'package:benchmark/ecs/components/velocity_component.dart';
+import 'package:dentity/dentity.dart';
 
 final class BoundsCollisionSystem extends EntitySystem {
   @override
@@ -12,12 +11,12 @@ final class BoundsCollisionSystem extends EntitySystem {
   @override
   void processEntity(
     Entity entity,
-    EntityComposition composition,
+    ComponentManagerReadOnlyInterface componentManager,
     Duration delta,
   ) {
-    final position = composition.get<PositionComponent>(entity)!;
-    final velocity = composition.get<VelocityComponent>(entity)!;
-    final bounds = composition.get<BoundsComponent>(entity)!;
+    final position = componentManager.getComponent<PositionComponent>(entity)!;
+    final velocity = componentManager.getComponent<VelocityComponent>(entity)!;
+    final bounds = componentManager.getComponent<BoundsComponent>(entity)!;
 
     final halfSize = bounds.size / 2;
     final maxX = bounds.width;

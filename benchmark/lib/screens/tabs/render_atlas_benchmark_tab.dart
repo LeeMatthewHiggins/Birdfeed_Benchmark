@@ -1,0 +1,169 @@
+import 'dart:typed_data';
+
+import 'package:benchmark/ecs/benchmark_world.dart';
+import 'package:benchmark/services/fps_tracker.dart';
+import 'package:benchmark/services/sprite_shader_benchmark_service.dart';
+import 'package:benchmark/widgets/file_drop_zone.dart';
+import 'package:benchmark/widgets/fps_graph_overlay.dart';
+import 'package:benchmark/widgets/instance_count_slider.dart';
+import 'package:benchmark/widgets/render_atlas_renderer.dart';
+import 'package:benchmark/widgets/sprite_size_slider.dart';
+import 'package:flutter/material.dart';
+
+class RenderAtlasBenchmarkTab extends StatefulWidget {
+  const RenderAtlasBenchmarkTab({
+    required this.fpsTracker,
+    super.key,
+  });
+
+  final FpsTracker fpsTracker;
+
+  @override
+  State<RenderAtlasBenchmarkTab> createState() =>
+      _RenderAtlasBenchmarkTabState();
+}
+
+class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
+  final _spriteShaderService = SpriteShaderBenchmarkService();
+  final _world = BenchmarkWorld();
+
+  int _instanceCount = 100;
+  int _spriteSize = 100;
+  String? _loadedFileName;
+
+  @override
+  void dispose() {
+    _world.dispose();
+    _spriteShaderService.dispose();
+    super.dispose();
+  }
+
+  Future<bool> _handleFileDropped(List<int> bytes, String fileName) async {
+    final success = await _spriteShaderService.loadImageFile(
+      Uint8List.fromList(bytes),
+      fileName,
+    );
+
+    if (success && mounted) {
+      setState(() {
+        _loadedFileName = fileName;
+      });
+      widget.fpsTracker.reset();
+    }
+
+    return success;
+  }
+
+  Future<void> _handleGenerateEmojiAtlas() async {
+    final success = await _spriteShaderService.generateEmojiAtlas();
+
+    if (success && mounted) {
+      setState(() {
+        _loadedFileName = _spriteShaderService.loadedFileName;
+      });
+      widget.fpsTracker.reset();
+    }
+  }
+
+  void _handleInstanceCountChanged(int count) {
+    setState(() {
+      _instanceCount = count;
+    });
+    widget.fpsTracker.reset();
+  }
+
+  void _handleSpriteSizeChanged(int size) {
+    setState(() {
+      _spriteSize = size;
+    });
+    widget.fpsTracker.reset();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: FileDropZone(
+                onFileDropped: _handleFileDropped,
+                allowedExtensions: const [
+                  '.png',
+                  '.jpg',
+                  '.jpeg',
+                  '.webp',
+                  '.gif',
+                  '.bmp',
+                  '.wbmp',
+                ],
+                fileName: _loadedFileName,
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              onPressed: _handleGenerateEmojiAtlas,
+              icon: const Icon(Icons.emoji_emotions),
+              label: const Text('Generate Emoji Atlas'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        InstanceCountSlider(
+          instanceCount: _instanceCount,
+          onChanged: _handleInstanceCountChanged,
+        ),
+        const SizedBox(height: 16),
+        SpriteSizeSlider(
+          spriteSize: _spriteSize,
+          onChanged: _handleSpriteSizeChanged,
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: _buildRenderArea(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRenderArea() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          children: [
+            if (_spriteShaderService.hasLoadedFile)
+              RenderAtlasRenderer(
+                key: ValueKey(_loadedFileName),
+                instanceCount: _instanceCount,
+                world: _world,
+                atlas: _spriteShaderService.atlas,
+                fpsTracker: widget.fpsTracker,
+                spriteSize: _spriteSize,
+                spriteRects: _spriteShaderService.spriteRects,
+              )
+            else
+              const Center(
+                child: Text(
+                  'Drop an image file to begin',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            FpsGraphOverlay(fpsTracker: widget.fpsTracker),
+          ],
+        ),
+      ),
+    );
+  }
+}

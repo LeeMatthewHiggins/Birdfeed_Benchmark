@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-
 import 'package:benchmark/screens/tabs/gif_benchmark_tab.dart';
+import 'package:benchmark/screens/tabs/render_atlas_benchmark_tab.dart';
 import 'package:benchmark/screens/tabs/rive_benchmark_tab.dart';
 import 'package:benchmark/screens/tabs/sprite_shader_benchmark_tab.dart';
 import 'package:benchmark/services/fps_tracker.dart';
+import 'package:flutter/material.dart';
 
 class BenchmarkScreen extends StatefulWidget {
   const BenchmarkScreen({super.key});
@@ -20,7 +20,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -50,6 +50,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                   RiveBenchmarkTab(fpsTracker: _fpsTracker),
                   GifBenchmarkTab(fpsTracker: _fpsTracker),
                   SpriteShaderBenchmarkTab(fpsTracker: _fpsTracker),
+                  RenderAtlasBenchmarkTab(fpsTracker: _fpsTracker),
                 ],
               ),
             ),
@@ -103,6 +104,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
           Tab(text: 'Rive'),
           Tab(text: 'GIF'),
           Tab(text: 'Sprite Shader'),
+          Tab(text: 'Render Atlas'),
         ],
       ),
     );

@@ -1,20 +1,21 @@
-import 'package:dentity/dentity.dart';
-
 import 'package:benchmark/ecs/components/gif_animation_state_component.dart';
 import 'package:benchmark/ecs/components/gif_content_component.dart';
+import 'package:dentity/dentity.dart';
 
 final class GifAnimationSystem extends EntitySystem {
   @override
-  Set<Type> get filterTypes => {GifContentComponent, GifAnimationStateComponent};
+  Set<Type> get filterTypes =>
+      {GifContentComponent, GifAnimationStateComponent};
 
   @override
   void processEntity(
     Entity entity,
-    EntityComposition composition,
+    ComponentManagerReadOnlyInterface componentManager,
     Duration delta,
   ) {
-    final content = composition.get<GifContentComponent>(entity)!;
-    final state = composition.get<GifAnimationStateComponent>(entity)!;
+    final content = componentManager.getComponent<GifContentComponent>(entity)!;
+    final state =
+        componentManager.getComponent<GifAnimationStateComponent>(entity)!;
 
     if (content.frames.isEmpty) return;
 

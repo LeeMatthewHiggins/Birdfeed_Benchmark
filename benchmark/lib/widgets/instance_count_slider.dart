@@ -16,7 +16,7 @@ class InstanceCountSlider extends StatefulWidget {
 
 class _InstanceCountSliderState extends State<InstanceCountSlider> {
   static const int _minInstances = 1;
-  static const int _maxInstances = 50000;
+  static const int _maxInstances = 100000;
   late double _currentValue;
 
   @override

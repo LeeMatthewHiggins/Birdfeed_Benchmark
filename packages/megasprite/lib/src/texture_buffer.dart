@@ -1,14 +1,17 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:synchronized/synchronized.dart';
+
 class TextureBuffer {
   ui.Image? _textureA;
   ui.Image? _textureB;
   bool _useTextureA = true;
+  final _lock = Lock();
 
   ui.Image? get current => _useTextureA ? _textureA : _textureB;
 
-  void swap(ui.Image newTexture) {
+  void _swap(ui.Image newTexture) {
     if (_useTextureA) {
       _textureB?.dispose();
       _textureB = newTexture;
@@ -24,8 +27,10 @@ class TextureBuffer {
     int width,
     int height,
   ) async {
-    final image = await _decodeImage(pixels, width, height);
-    swap(image);
+    await _lock.synchronized(() async {
+      final image = await _decodeImage(pixels, width, height);
+      _swap(image);
+    });
   }
 
   Future<ui.Image> _decodeImage(
