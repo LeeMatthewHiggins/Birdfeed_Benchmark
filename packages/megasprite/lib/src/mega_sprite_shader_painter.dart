@@ -81,8 +81,7 @@ class MegaSpriteShaderPainter extends CustomPainter {
       ..setFloat(5, atlas.image.height.toDouble())
       ..setFloat(6, _layout!.dataTextureWidth.toDouble())
       ..setFloat(7, _layout!.dataTextureHeight.toDouble())
-      ..setFloat(8, _layout!.cellDataWidth.toDouble())
-      ..setFloat(9, cellSize.toDouble())
+      ..setFloat(8, cellSize.toDouble())
       ..setImageSampler(0, atlas.image)
       ..setImageSampler(1, currentPosTexture)
       ..setImageSampler(2, currentCountTexture);

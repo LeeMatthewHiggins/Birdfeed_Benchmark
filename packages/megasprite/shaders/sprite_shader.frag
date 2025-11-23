@@ -2,7 +2,6 @@ uniform vec2 uCanvasSize;
 uniform vec2 uGridSize;
 uniform vec2 uAtlasSize;
 uniform vec2 uPositionDataSize;
-uniform float uCellDataWidth;
 uniform float uCellSize;
 uniform sampler2D uAtlasTexture;
 uniform sampler2D uPositionData;
