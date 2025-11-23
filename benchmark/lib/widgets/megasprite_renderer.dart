@@ -16,9 +16,10 @@ class MegaSpriteRenderer extends StatefulWidget {
     required this.world,
     required this.atlas,
     required this.fpsTracker,
-    required this.cellSize,
-    required this.showDebugOverlay,
     required this.spriteSize,
+    this.cellSize = 32,
+    this.showDebugOverlay = false,
+    this.painterType = MegaSpritePainterType.shader,
     this.spriteRects,
     super.key,
   });
@@ -30,6 +31,7 @@ class MegaSpriteRenderer extends StatefulWidget {
   final int cellSize;
   final bool showDebugOverlay;
   final int spriteSize;
+  final MegaSpritePainterType painterType;
   final List<Rect>? spriteRects;
 
   @override
@@ -45,7 +47,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
   int _lastElapsedMicroseconds = 0;
   SpriteMetrics? _debugMetrics;
   final List<Sprite> _sprites = [];
-  MegaSpritePainter? _painter;
+  CustomPainter? _painter;
   int? _lastSpriteSize;
 
   static const Duration _kFrameDuration = Duration(milliseconds: 16);
@@ -102,18 +104,25 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
 
       if (position == null || spriteRect == null) continue;
 
+      // Position is center, convert to top-left for sprite.rect
+      final spriteSize = widget.spriteSize.toDouble();
+      final left = position.x - spriteSize / 2;
+      final top = position.y - spriteSize / 2;
+
       final sprite = Sprite(
-        x: position.x,
-        y: position.y,
-        width: widget.spriteSize.toDouble(),
-        height: widget.spriteSize.toDouble(),
+        rect: Rect.fromLTWH(
+          left,
+          top,
+          spriteSize,
+          spriteSize,
+        ),
         sourceRect: spriteRect.sourceRect,
       );
       _sprites.add(sprite);
     }
   }
 
-  MegaSpritePainter? _getPainter() {
+  CustomPainter? _getPainter() {
     if (widget.atlas == null || _entities.isEmpty) return null;
 
     if (_lastSpriteSize != widget.spriteSize) {
@@ -121,25 +130,34 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
       _lastSpriteSize = widget.spriteSize;
     }
 
-    return _painter ??= MegaSpritePainter(
-      sprites: _sprites,
-      atlas: widget.atlas!,
-      cellSize: widget.cellSize,
-      onBeforePaint: _updateSprites,
-      onMetricsUpdate: (metrics) {
-        if (!widget.showDebugOverlay) return;
+    if (widget.painterType == MegaSpritePainterType.shader) {
+      return _painter ??= MegaSpriteShaderPainter(
+        sprites: _sprites,
+        atlas: widget.atlas!,
+        cellSize: widget.cellSize,
+        onBeforePaint: _updateSprites,
+        onMetricsUpdate: (metrics) {
+          if (!widget.showDebugOverlay) return;
 
-        if (_debugMetrics == null) {
-          _debugMetrics = metrics;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() {});
-          });
-        } else {
-          _debugMetrics = metrics;
-        }
-      },
-      repaint: _animationController,
-    );
+          if (_debugMetrics == null) {
+            _debugMetrics = metrics;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() {});
+            });
+          } else {
+            _debugMetrics = metrics;
+          }
+        },
+        repaint: _animationController,
+      );
+    } else {
+      return _painter ??= MegaSpriteAtlasPainter(
+        sprites: _sprites,
+        atlas: widget.atlas!,
+        onBeforePaint: _updateSprites,
+        repaint: _animationController,
+      );
+    }
   }
 
   @override
@@ -191,6 +209,10 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
         spriteSize: widget.spriteSize.toDouble(),
       );
       _entities.add(entity);
+    }
+
+    if (widget.painterType == MegaSpritePainterType.atlas) {
+      _updateSprites();
     }
 
     if (mounted) {

@@ -14,7 +14,8 @@ class SpriteTextureEncoder {
     required this.maxGridColumns,
     required this.maxGridRows,
   }) {
-    final positionPixelCount = layout.dataTextureWidth * layout.dataTextureHeight * 4;
+    final positionPixelCount =
+        layout.dataTextureWidth * layout.dataTextureHeight * 4;
     _positionPixels = Uint8List(positionPixelCount);
 
     final cellCountPixelCount = maxGridColumns * maxGridRows * 4;
@@ -40,7 +41,6 @@ class SpriteTextureEncoder {
     final gridRows = binner.gridRows;
     final cellSize = binner.cellSize;
     final cellBins = binner.cellBins;
-    final cellsPerRow = layout.cellsPerRow;
     final cellDataWidth = layout.cellDataWidth;
     final dataTextureWidth = layout.dataTextureWidth;
     const maxSprites = MegaSpriteConfig.maxSpritesPerCell;
@@ -53,15 +53,11 @@ class SpriteTextureEncoder {
         final spritesInCell = cellBins[cellIndex];
         final cellSpriteCount = binner.getCellCount(cellIndex);
 
-        final startIndex = cellSpriteCount > maxSprites
-            ? cellSpriteCount - maxSprites
-            : 0;
+        final startIndex =
+            cellSpriteCount > maxSprites ? cellSpriteCount - maxSprites : 0;
 
         final cellTopLeftX = cellX * cellSize;
         final cellTopLeftY = cellY * cellSize;
-
-        final cellU = (cellIndex % cellsPerRow) * cellDataWidth;
-        final cellV = cellIndex ~/ cellsPerRow;
 
         var encodedCount = 0;
 
@@ -82,8 +78,13 @@ class SpriteTextureEncoder {
           final atlasWidth = sprite.atlasWidth.toInt();
           final atlasHeight = sprite.atlasHeight.toInt();
 
-          final pixelU = cellU + (encodedCount * pixelsPerSprite);
-          final pixelBase = (cellV * dataTextureWidth + pixelU) * 4;
+          // Linear pixel offset: cellIndex * cellDataWidth + spriteIndex * pixelsPerSprite
+          final linearPixelOffset =
+              cellIndex * cellDataWidth + (encodedCount * pixelsPerSprite);
+          // Convert to 2D texture coordinates
+          final pixelU = linearPixelOffset % dataTextureWidth;
+          final pixelV = linearPixelOffset ~/ dataTextureWidth;
+          final pixelBase = (pixelV * dataTextureWidth + pixelU) * 4;
 
           pixels[pixelBase] = byteX;
           pixels[pixelBase + 1] = byteY;

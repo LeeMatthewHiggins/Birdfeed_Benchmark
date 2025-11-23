@@ -10,9 +10,11 @@ class CellSizeSlider extends StatelessWidget {
   final int cellSize;
   final ValueChanged<int> onChanged;
 
-  static const int _minCellSize = 32;
+  static const int _minCellSize = 8;
   static const int _maxCellSize = 128;
   static const List<int> _cellSizeValues = [
+    8,
+    16,
     32,
     64,
     128,

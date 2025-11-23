@@ -39,9 +39,12 @@ class SpriteDebugOverlay extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMetric('Grid', '${metrics.gridColumns}x${metrics.gridRows}'),
-                _buildMetric('Data Texture', '${metrics.positionTextureWidth}x${metrics.positionTextureHeight}'),
-                _buildMetric('Avg/Cell', metrics.avgSpritesPerCell.toStringAsFixed(1)),
+                _buildMetric(
+                    'Grid', '${metrics.gridColumns}x${metrics.gridRows}'),
+                _buildMetric('Data Texture',
+                    '${metrics.positionTextureWidth}x${metrics.positionTextureHeight}'),
+                _buildMetric(
+                    'Avg/Cell', metrics.avgSpritesPerCell.toStringAsFixed(1)),
                 _buildMetric('Max/Cell', '${metrics.maxSpritesPerCell}'),
               ],
             ),
@@ -86,9 +89,8 @@ class _CellGridPainter extends CustomPainter {
   final SpriteMetrics metrics;
   final int cellSize;
 
-  static const int _kHighlightThreshold = 200;
   static const Color _kGridColor = Color(0x40FFFFFF);
-  static const Color _kHighlightColor = Color(0x80FF0000);
+  static const int _kMaxSpritesPerCell = 255;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -96,10 +98,6 @@ class _CellGridPainter extends CustomPainter {
       ..color = _kGridColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-
-    final highlightPaint = Paint()
-      ..color = _kHighlightColor
-      ..style = PaintingStyle.fill;
 
     for (var y = 0; y < metrics.gridRows; y++) {
       for (var x = 0; x < metrics.gridColumns; x++) {
@@ -111,10 +109,20 @@ class _CellGridPainter extends CustomPainter {
         final right = (left + cellSize).clamp(0.0, size.width);
         final bottom = (top + cellSize).clamp(0.0, size.height);
 
-        if (count > _kHighlightThreshold) {
+        // Calculate color gradient from green (empty) to red (full)
+        if (count > 0) {
+          final ratio = (count / _kMaxSpritesPerCell).clamp(0.0, 1.0);
+          final fillPaint = Paint()
+            ..color = Color.lerp(
+              const Color(0x8000FF00), // Green with alpha
+              const Color(0x80FF0000), // Red with alpha
+              ratio,
+            )!
+            ..style = PaintingStyle.fill;
+
           canvas.drawRect(
             Rect.fromLTRB(left, top, right, bottom),
-            highlightPaint,
+            fillPaint,
           );
         }
 

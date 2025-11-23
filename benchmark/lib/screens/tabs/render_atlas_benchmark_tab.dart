@@ -6,9 +6,9 @@ import 'package:benchmark/services/sprite_shader_benchmark_service.dart';
 import 'package:benchmark/widgets/file_drop_zone.dart';
 import 'package:benchmark/widgets/fps_graph_overlay.dart';
 import 'package:benchmark/widgets/instance_count_slider.dart';
-import 'package:benchmark/widgets/render_atlas_renderer.dart';
-import 'package:benchmark/widgets/sprite_size_slider.dart';
+import 'package:benchmark/widgets/megasprite_renderer.dart';
 import 'package:flutter/material.dart';
+import 'package:megasprite/megasprite.dart';
 
 class RenderAtlasBenchmarkTab extends StatefulWidget {
   const RenderAtlasBenchmarkTab({
@@ -28,7 +28,6 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
   final _world = BenchmarkWorld();
 
   int _instanceCount = 100;
-  int _spriteSize = 100;
   String? _loadedFileName;
 
   @override
@@ -72,13 +71,6 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
     widget.fpsTracker.reset();
   }
 
-  void _handleSpriteSizeChanged(int size) {
-    setState(() {
-      _spriteSize = size;
-    });
-    widget.fpsTracker.reset();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -115,11 +107,6 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
           onChanged: _handleInstanceCountChanged,
         ),
         const SizedBox(height: 16),
-        SpriteSizeSlider(
-          spriteSize: _spriteSize,
-          onChanged: _handleSpriteSizeChanged,
-        ),
-        const SizedBox(height: 16),
         Expanded(
           child: _buildRenderArea(),
         ),
@@ -141,13 +128,14 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
         child: Stack(
           children: [
             if (_spriteShaderService.hasLoadedFile)
-              RenderAtlasRenderer(
+              MegaSpriteRenderer(
                 key: ValueKey(_loadedFileName),
                 instanceCount: _instanceCount,
                 world: _world,
                 atlas: _spriteShaderService.atlas,
                 fpsTracker: widget.fpsTracker,
-                spriteSize: _spriteSize,
+                spriteSize: 64,
+                painterType: MegaSpritePainterType.atlas,
                 spriteRects: _spriteShaderService.spriteRects,
               )
             else

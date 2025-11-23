@@ -8,8 +8,8 @@ import 'package:megasprite/src/texture_buffer.dart';
 import 'package:megasprite/src/texture_encoder.dart';
 import 'package:megasprite/src/texture_layout.dart';
 
-class MegaSpritePainter extends CustomPainter {
-  MegaSpritePainter({
+class MegaSpriteShaderPainter extends CustomPainter {
+  MegaSpriteShaderPainter({
     required this.sprites,
     required this.atlas,
     required this.cellSize,
@@ -77,9 +77,8 @@ class MegaSpritePainter extends CustomPainter {
       ..setFloat(5, atlas.image.height.toDouble())
       ..setFloat(6, _layout!.dataTextureWidth.toDouble())
       ..setFloat(7, _layout!.dataTextureHeight.toDouble())
-      ..setFloat(8, _layout!.cellsPerRow.toDouble())
-      ..setFloat(9, _layout!.cellDataWidth.toDouble())
-      ..setFloat(10, cellSize.toDouble())
+      ..setFloat(8, _layout!.cellDataWidth.toDouble())
+      ..setFloat(9, cellSize.toDouble())
       ..setImageSampler(0, atlas.image)
       ..setImageSampler(1, currentPosTexture)
       ..setImageSampler(2, currentCountTexture);
@@ -144,17 +143,14 @@ class MegaSpritePainter extends CustomPainter {
 
       binner.binSprite(
         spriteIndex: i,
-        posX: sprite.x,
-        posY: sprite.y,
-        spriteSize: sprite.width,
+        rect: sprite.rect,
       );
 
-      final halfSize = sprite.width / 2;
       spriteDataList[i] = SpriteData(
-        x: sprite.x - halfSize,
-        y: sprite.y - halfSize,
-        width: sprite.width,
-        height: sprite.width,
+        x: sprite.rect.left,
+        y: sprite.rect.top,
+        width: sprite.rect.width,
+        height: sprite.rect.height,
         atlasX: sprite.sourceRect.left,
         atlasY: sprite.sourceRect.top,
         atlasWidth: sprite.sourceRect.width,
@@ -214,7 +210,7 @@ class MegaSpritePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(MegaSpritePainter oldDelegate) =>
+  bool shouldRepaint(MegaSpriteShaderPainter oldDelegate) =>
       oldDelegate.sprites != sprites ||
       oldDelegate.cellSize != cellSize ||
       oldDelegate.atlas != atlas;

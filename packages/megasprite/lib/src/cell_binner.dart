@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 class SpriteCellBinner {
   SpriteCellBinner({
     required this.canvasWidth,
@@ -39,15 +41,12 @@ class SpriteCellBinner {
 
   void binSprite({
     required int spriteIndex,
-    required double posX,
-    required double posY,
-    required double spriteSize,
+    required Rect rect,
   }) {
-    final halfSize = spriteSize / 2;
-    final minX = posX - halfSize;
-    final maxX = posX + halfSize;
-    final minY = posY - halfSize;
-    final maxY = posY + halfSize;
+    final minX = rect.left;
+    final maxX = rect.right;
+    final minY = rect.top;
+    final maxY = rect.bottom;
 
     final cellSizeInv = 1.0 / cellSize;
     final rawMinCellX = (minX * cellSizeInv).floor();
@@ -58,10 +57,18 @@ class SpriteCellBinner {
     final maxColIndex = gridColumns - 1;
     final maxRowIndex = gridRows - 1;
 
-    final minCellX = rawMinCellX < 0 ? 0 : (rawMinCellX > maxColIndex ? maxColIndex : rawMinCellX);
-    final maxCellX = rawMaxCellX < 0 ? 0 : (rawMaxCellX > maxColIndex ? maxColIndex : rawMaxCellX);
-    final minCellY = rawMinCellY < 0 ? 0 : (rawMinCellY > maxRowIndex ? maxRowIndex : rawMinCellY);
-    final maxCellY = rawMaxCellY < 0 ? 0 : (rawMaxCellY > maxRowIndex ? maxRowIndex : rawMaxCellY);
+    final minCellX = rawMinCellX < 0
+        ? 0
+        : (rawMinCellX > maxColIndex ? maxColIndex : rawMinCellX);
+    final maxCellX = rawMaxCellX < 0
+        ? 0
+        : (rawMaxCellX > maxColIndex ? maxColIndex : rawMaxCellX);
+    final minCellY = rawMinCellY < 0
+        ? 0
+        : (rawMinCellY > maxRowIndex ? maxRowIndex : rawMinCellY);
+    final maxCellY = rawMaxCellY < 0
+        ? 0
+        : (rawMaxCellY > maxRowIndex ? maxRowIndex : rawMaxCellY);
 
     for (var cy = minCellY; cy <= maxCellY; cy++) {
       for (var cx = minCellX; cx <= maxCellX; cx++) {
@@ -71,6 +78,7 @@ class SpriteCellBinner {
           _cellBins[cellIndex][count] = spriteIndex;
           _cellCounts[cellIndex] = count + 1;
         }
+        // Note: Sprites beyond 255 per cell are silently dropped
       }
     }
   }

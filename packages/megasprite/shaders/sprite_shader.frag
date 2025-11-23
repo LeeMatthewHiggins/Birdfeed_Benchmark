@@ -2,7 +2,6 @@ uniform vec2 uCanvasSize;
 uniform vec2 uGridSize;
 uniform vec2 uAtlasSize;
 uniform vec2 uPositionDataSize;
-uniform float uCellsPerRow;
 uniform float uCellDataWidth;
 uniform float uCellSize;
 uniform sampler2D uAtlasTexture;
@@ -26,18 +25,24 @@ void main() {
   vec2 cellCountUV = (cellCoord + 0.5) / uGridSize;
   float cellSpriteCount = texture(uCellCounts, cellCountUV).r * 255.0;
 
-  float cellRow = floor(cellIndex / uCellsPerRow);
-  float cellCol = mod(cellIndex, uCellsPerRow);
-  vec2 cellUV = vec2(cellCol * uCellDataWidth, cellRow);
-
   for (int i = 0; i < kMaxSpritesPerCell; i++) {
+    // Early exit if we've processed all sprites in this cell
     if (float(i) >= cellSpriteCount) break;
+    
+    // Early exit if pixel is already fully opaque
+    if (fragColor.a >= 0.99) break;
 
-    float pixelU = cellUV.x + float(i) * 3.0;
+    // Linear pixel offset: cellIndex * cellDataWidth + spriteIndex * 3
+    float linearPixelOffset = cellIndex * uCellDataWidth + float(i) * 3.0;
+    
+    // Convert to 2D texture coordinates
+    float pixelU = mod(linearPixelOffset, uPositionDataSize.x);
+    float pixelV = floor(linearPixelOffset / uPositionDataSize.x);
+    
     float u1 = (pixelU + 0.5) / uPositionDataSize.x;
     float u2 = (pixelU + 1.5) / uPositionDataSize.x;
     float u3 = (pixelU + 2.5) / uPositionDataSize.x;
-    float v = (cellUV.y + 0.5) / uPositionDataSize.y;
+    float v = (pixelV + 0.5) / uPositionDataSize.y;
 
     vec4 posData = texture(uPositionData, vec2(u1, v));
     vec4 atlasPosData = texture(uPositionData, vec2(u2, v));

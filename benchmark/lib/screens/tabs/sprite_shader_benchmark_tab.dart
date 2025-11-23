@@ -8,7 +8,6 @@ import 'package:benchmark/widgets/file_drop_zone.dart';
 import 'package:benchmark/widgets/fps_graph_overlay.dart';
 import 'package:benchmark/widgets/instance_count_slider.dart';
 import 'package:benchmark/widgets/megasprite_renderer.dart';
-import 'package:benchmark/widgets/sprite_size_slider.dart';
 import 'package:flutter/material.dart';
 
 class SpriteShaderBenchmarkTab extends StatefulWidget {
@@ -29,8 +28,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
   final _world = BenchmarkWorld();
 
   int _instanceCount = 100;
-  int _cellSize = 128;
-  int _spriteSize = 100;
+  int _cellSize = 32;
   bool _showDebugOverlay = false;
   String? _loadedFileName;
 
@@ -82,13 +80,6 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
     widget.fpsTracker.reset();
   }
 
-  void _handleSpriteSizeChanged(int size) {
-    setState(() {
-      _spriteSize = size;
-    });
-    widget.fpsTracker.reset();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -128,11 +119,6 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
         CellSizeSlider(
           cellSize: _cellSize,
           onChanged: _handleCellSizeChanged,
-        ),
-        const SizedBox(height: 16),
-        SpriteSizeSlider(
-          spriteSize: _spriteSize,
-          onChanged: _handleSpriteSizeChanged,
         ),
         const SizedBox(height: 16),
         Row(
@@ -185,7 +171,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
                 fpsTracker: widget.fpsTracker,
                 cellSize: _cellSize,
                 showDebugOverlay: _showDebugOverlay,
-                spriteSize: _spriteSize,
+                spriteSize: 64,
                 spriteRects: _spriteShaderService.spriteRects,
               )
             else
