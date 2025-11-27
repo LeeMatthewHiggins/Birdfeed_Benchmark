@@ -9,6 +9,7 @@ import 'package:benchmark/widgets/fps_graph_overlay.dart';
 import 'package:benchmark/widgets/instance_count_slider.dart';
 import 'package:benchmark/widgets/megasprite_renderer.dart';
 import 'package:flutter/material.dart';
+import 'package:megasprite/megasprite.dart';
 
 class SpriteShaderBenchmarkTab extends StatefulWidget {
   const SpriteShaderBenchmarkTab({
@@ -31,16 +32,17 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
   int _cellSize = 32;
   bool _showDebugOverlay = false;
   String? _loadedFileName;
+  bool _isGenerating = false;
+  AtlasBuildProgress? _buildProgress;
 
   @override
   void dispose() {
     _world.dispose();
-    _spriteShaderService.dispose();
     super.dispose();
   }
 
   Future<bool> _handleFileDropped(List<int> bytes, String fileName) async {
-    final success = await _spriteShaderService.loadImageFile(
+    final success = await _spriteShaderService.loadFile(
       Uint8List.fromList(bytes),
       fileName,
     );
@@ -56,13 +58,36 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
   }
 
   Future<void> _handleGenerateEmojiAtlas() async {
-    final success = await _spriteShaderService.generateEmojiAtlas();
+    setState(() {
+      _isGenerating = true;
+      _buildProgress = null;
+    });
 
-    if (success && mounted) {
-      setState(() {
-        _loadedFileName = _spriteShaderService.loadedFileName;
-      });
-      widget.fpsTracker.reset();
+    try {
+      await for (final progress
+          in _spriteShaderService.generateEmojiAtlas()) {
+        if (mounted) {
+          setState(() {
+            _buildProgress = progress;
+          });
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _loadedFileName = _spriteShaderService.loadedFileName;
+          _isGenerating = false;
+          _buildProgress = null;
+        });
+        widget.fpsTracker.reset();
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+          _buildProgress = null;
+        });
+      }
     }
   }
 
@@ -98,15 +123,26 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
                   '.gif',
                   '.bmp',
                   '.wbmp',
+                  '.zip',
                 ],
                 fileName: _loadedFileName,
               ),
             ),
             const SizedBox(width: 16),
             ElevatedButton.icon(
-              onPressed: _handleGenerateEmojiAtlas,
-              icon: const Icon(Icons.emoji_emotions),
-              label: const Text('Generate Emoji Atlas'),
+              onPressed: _isGenerating ? null : _handleGenerateEmojiAtlas,
+              icon: _isGenerating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.emoji_emotions),
+              label: Text(
+                _isGenerating
+                    ? _buildProgress?.message ?? 'Building...'
+                    : 'Generate Emoji Atlas',
+              ),
             ),
           ],
         ),
@@ -173,7 +209,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
                 cellSize: _cellSize,
                 showDebugOverlay: _showDebugOverlay,
                 spriteSize: 64,
-                spriteRects: _spriteShaderService.spriteRects,
+                spriteLocations: _spriteShaderService.spriteLocations,
               )
             else
               const Center(

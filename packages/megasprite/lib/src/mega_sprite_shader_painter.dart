@@ -162,6 +162,11 @@ class MegaSpriteShaderPainter extends CustomPainter {
         atlasY: sprite.sourceRect.top,
         atlasWidth: sprite.sourceRect.width,
         atlasHeight: sprite.sourceRect.height,
+        trimOffsetX: sprite.trimOffsetX.toDouble(),
+        trimOffsetY: sprite.trimOffsetY.toDouble(),
+        originalWidth: sprite.originalWidth?.toDouble(),
+        originalHeight: sprite.originalHeight?.toDouble(),
+        rotated: sprite.rotated,
       );
     }
 

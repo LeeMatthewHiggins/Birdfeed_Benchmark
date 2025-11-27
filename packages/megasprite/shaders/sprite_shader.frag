@@ -11,6 +11,9 @@ out vec4 fragColor;
 
 const int kMaxSpritesPerCell = 255;
 const float kSignedByteOffset = 128.0;
+const float kRotationBitMask = 32.0;
+const float kEffectBitShift = 5.0;
+const float kDimensionMask = 31.0;
 
 void main() {
   vec2 pixelPos = gl_FragCoord.xy;
@@ -51,9 +54,20 @@ void main() {
       atlasPosData.r * 255.0 + atlasPosData.g * 255.0 * 256.0,
       atlasPosData.b * 255.0 + atlasPosData.a * 255.0 * 256.0
     );
+
+    float widthHighByte = floor(atlasSizeData.g * 255.0 + 0.5);
+    float heightHighByte = floor(atlasSizeData.a * 255.0 + 0.5);
+
+    float rotationBits = mod(widthHighByte, 64.0);
+    bool rotated = rotationBits >= kRotationBitMask;
+    float effect = floor(heightHighByte / kRotationBitMask);
+
+    float widthLowByte = floor(atlasSizeData.r * 255.0 + 0.5);
+    float heightLowByte = floor(atlasSizeData.b * 255.0 + 0.5);
+
     vec2 atlasSize = vec2(
-      atlasSizeData.r * 255.0 + atlasSizeData.g * 255.0 * 256.0,
-      atlasSizeData.b * 255.0 + atlasSizeData.a * 255.0 * 256.0
+      widthLowByte + mod(widthHighByte, kRotationBitMask) * 256.0,
+      heightLowByte + mod(heightHighByte, kRotationBitMask) * 256.0
     );
 
     vec2 atlasMin = atlasPos;
@@ -68,35 +82,15 @@ void main() {
     if (pixelInCell.x >= aabbMin.x && pixelInCell.x < aabbMax.x &&
         pixelInCell.y >= aabbMin.y && pixelInCell.y < aabbMax.y) {
 
-      vec2 clippedOffsetMin = aabbMin - spriteMin;
-      vec2 clippedOffsetMax = spriteMax - aabbMax;
-
-      vec2 atlasRange = atlasMax - atlasMin + vec2(1.0);
-      vec2 atlasClipMin = vec2(0.0);
-      vec2 atlasClipMax = vec2(0.0);
-
-      if (spriteSize.x > 0.0) {
-        atlasClipMin.x = (clippedOffsetMin.x / spriteSize.x) * atlasRange.x;
-        atlasClipMax.x = (clippedOffsetMax.x / spriteSize.x) * atlasRange.x;
-      }
-      if (spriteSize.y > 0.0) {
-        atlasClipMin.y = (clippedOffsetMin.y / spriteSize.y) * atlasRange.y;
-        atlasClipMax.y = (clippedOffsetMax.y / spriteSize.y) * atlasRange.y;
-      }
-
-      vec2 clippedAtlasMin = atlasMin + atlasClipMin;
-      vec2 clippedAtlasMax = atlasMax + vec2(1.0) - atlasClipMax;
-
-      vec2 localPos = pixelInCell - aabbMin;
-      vec2 aabbSize = aabbMax - aabbMin;
-      vec2 atlasPixelRange = clippedAtlasMax - clippedAtlasMin;
+      vec2 localPos = pixelInCell - spriteMin;
 
       vec2 spriteUV = vec2(0.5);
-      if (aabbSize.x > 0.0) spriteUV.x = localPos.x / aabbSize.x;
-      if (aabbSize.y > 0.0) spriteUV.y = localPos.y / aabbSize.y;
+      if (spriteSize.x > 0.0) spriteUV.x = localPos.x / spriteSize.x;
+      if (spriteSize.y > 0.0) spriteUV.y = localPos.y / spriteSize.y;
 
-      vec2 atlasPixel = clippedAtlasMin + spriteUV * atlasPixelRange;
-      vec2 texCoord = (atlasPixel + vec2(0.5)) / uAtlasSize;
+      vec2 atlasUV = rotated ? vec2(1.0 - spriteUV.y, spriteUV.x) : spriteUV;
+      vec2 atlasPixel = atlasMin + atlasUV * atlasSize;
+      vec2 texCoord = atlasPixel / uAtlasSize;
 
       vec4 texColor = texture(uAtlasTexture, texCoord);
       fragColor = mix(fragColor, texColor, texColor.a);

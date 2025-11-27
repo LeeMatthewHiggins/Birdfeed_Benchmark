@@ -15,65 +15,118 @@ class SpriteShaderBenchmarkService {
   SpriteAtlas? _atlas;
   ui.FragmentShader? _shader;
   String? _loadedFileName;
+  AtlasResult? _atlasResult;
+  List<SpriteLocation>? _spriteLocations;
 
   bool get hasLoadedFile => _atlas != null;
   String? get loadedFileName => _loadedFileName;
+  List<SpriteLocation>? get spriteLocations => _spriteLocations;
 
-  List<ui.Rect>? _spriteRects;
-  List<ui.Rect>? get spriteRects => _spriteRects;
-
-  Future<bool> loadImageFile(Uint8List bytes, String fileName) async {
+  Future<bool> loadFile(Uint8List bytes, String fileName) async {
     try {
-      final oldAtlas = _atlas;
-      final oldShader = _shader;
-
-      final atlas = await SpriteAtlas.fromBytes(bytes);
-      final shader = await _loadShader();
-
-      _atlas = atlas;
-      _shader = shader;
-      _loadedFileName = fileName;
-      _spriteRects = null;
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      oldAtlas?.dispose();
-      oldShader?.dispose();
-
-      return true;
+      if (fileName.toLowerCase().endsWith('.zip')) {
+        return _loadZipFile(bytes, fileName);
+      }
+      return _loadImageFile(bytes, fileName);
     } on Exception catch (e, stackTrace) {
-      debugPrint('Error loading image file $fileName: $e');
+      debugPrint('Error loading file $fileName: $e');
       debugPrint('Stack trace: $stackTrace');
       _atlas = null;
       _shader = null;
       _loadedFileName = null;
-      _spriteRects = null;
+      _atlasResult = null;
+      _spriteLocations = null;
       return false;
     }
   }
 
-  Future<bool> generateEmojiAtlas() async {
-    try {
-      final generator = EmojiAtlasGenerator();
-      final (image, rects) = await generator.generate();
+  Future<bool> _loadImageFile(Uint8List bytes, String fileName) async {
+    final oldAtlas = _atlas;
+    final oldShader = _shader;
+    final oldResult = _atlasResult;
 
-      final oldAtlas = _atlas;
-      final oldShader = _shader;
+    final atlas = await SpriteAtlas.fromBytes(bytes);
+    final shader = await _loadShader();
 
-      _atlas = await SpriteAtlas.fromImage(image);
-      _shader = await _loadShader();
-      _spriteRects = rects;
-      _loadedFileName = 'Emoji Atlas';
+    _atlas = atlas;
+    _shader = shader;
+    _loadedFileName = fileName;
+    _atlasResult = null;
+    _spriteLocations = null;
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    if (oldResult != null) {
+      oldResult.dispose();
+    } else {
       oldAtlas?.dispose();
-      oldShader?.dispose();
-
-      return true;
-    } on Exception catch (e, stackTrace) {
-      debugPrint('Error generating emoji atlas: $e');
-      debugPrint('Stack trace: $stackTrace');
-      return false;
     }
+    oldShader?.dispose();
+
+    return true;
+  }
+
+  Future<bool> _loadZipFile(Uint8List bytes, String fileName) async {
+    final oldAtlas = _atlas;
+    final oldShader = _shader;
+    final oldResult = _atlasResult;
+
+    final loader = ZipAtlasLoader();
+    final result = await loader.load(bytes);
+    final shader = await _loadShader();
+
+    _atlas = result.atlas;
+    _shader = shader;
+    _loadedFileName = fileName;
+    _atlasResult = null;
+    _spriteLocations = result.spriteLocations;
+
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    if (oldResult != null) {
+      oldResult.dispose();
+    } else {
+      oldAtlas?.dispose();
+    }
+    oldShader?.dispose();
+
+    return true;
+  }
+
+  Stream<AtlasBuildProgress> generateEmojiAtlas() async* {
+    final generator = EmojiAtlasGenerator();
+    final sourceSprites = await generator.generateSourceSprites();
+
+    final builder = IsolateAtlasBuilder(
+      sizePreset: AtlasSizePreset.size2k,
+    );
+
+    await for (final progress in builder.buildWithProgress(sourceSprites)) {
+      yield progress;
+    }
+
+    final oldAtlas = _atlas;
+    final oldShader = _shader;
+    final oldResult = _atlasResult;
+
+    final result = builder.getResult();
+    final atlasList = result.toSpriteAtlasList();
+
+    if (atlasList.isEmpty) {
+      throw StateError('Atlas generation produced no pages');
+    }
+
+    _atlasResult = result;
+    _atlas = atlasList.first;
+    _shader = await _loadShader();
+    _spriteLocations = result.toSpriteLocationMap().values.toList();
+    _loadedFileName = 'Emoji Atlas';
+
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    if (oldResult != null) {
+      oldResult.dispose();
+    } else {
+      oldAtlas?.dispose();
+    }
+    oldShader?.dispose();
   }
 
   Future<ui.FragmentShader> _loadShader() async {
@@ -85,13 +138,27 @@ class SpriteShaderBenchmarkService {
 
   SpriteAtlas? get atlas => _atlas;
   ui.FragmentShader? get shader => _shader;
+  AtlasResult? get atlasResult => _atlasResult;
+  bool get canExport => _atlasResult != null;
+
+  Future<Uint8List?> exportToZip() async {
+    if (_atlasResult == null) return null;
+
+    final exporter = ZipAtlasExporter();
+    return exporter.export(_atlasResult!);
+  }
 
   void dispose() {
-    _atlas?.dispose();
+    if (_atlasResult != null) {
+      _atlasResult!.dispose();
+    } else {
+      _atlas?.dispose();
+    }
     _shader?.dispose();
     _atlas = null;
     _shader = null;
     _loadedFileName = null;
-    _spriteRects = null;
+    _atlasResult = null;
+    _spriteLocations = null;
   }
 }

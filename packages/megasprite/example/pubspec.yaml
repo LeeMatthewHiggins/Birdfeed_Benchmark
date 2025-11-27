@@ -1,0 +1,26 @@
+name: atlas_creator
+description: Atlas Creator example app for megasprite package
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  archive: ^3.6.1
+  desktop_drop: ^0.4.4
+  file_picker: ^8.1.6
+  flutter:
+    sdk: flutter
+  image: ^4.3.0
+  megasprite:
+    path: ..
+  web: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^7.0.0
+
+flutter:
+  uses-material-design: true

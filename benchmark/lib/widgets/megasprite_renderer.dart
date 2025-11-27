@@ -22,7 +22,7 @@ class MegaSpriteRenderer extends StatefulWidget {
     this.cellSize = 32,
     this.showDebugOverlay = false,
     this.painterType = MegaSpritePainterType.shader,
-    this.spriteRects,
+    this.spriteLocations,
     super.key,
   });
 
@@ -35,7 +35,7 @@ class MegaSpriteRenderer extends StatefulWidget {
   final bool showDebugOverlay;
   final int spriteSize;
   final MegaSpritePainterType painterType;
-  final List<Rect>? spriteRects;
+  final List<SpriteLocation>? spriteLocations;
 
   @override
   State<MegaSpriteRenderer> createState() => _MegaSpriteRendererState();
@@ -127,6 +127,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
           spriteSize,
         ),
         sourceRect: spriteRect.sourceRect,
+        rotated: spriteRect.rotated,
       );
       _sprites.add(sprite);
     }
@@ -198,7 +199,7 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     final atlas = widget.atlas;
     if (atlas == null) return;
 
-    final spriteRects = widget.spriteRects;
+    final spriteLocations = widget.spriteLocations;
     final random = Random();
 
     final shader = widget.shader;
@@ -210,18 +211,28 @@ class _MegaSpriteRendererState extends State<MegaSpriteRenderer>
     );
 
     for (var i = 0; i < widget.instanceCount; i++) {
+      final SpriteLocation? location;
+      if (spriteLocations != null && spriteLocations.isNotEmpty) {
+        location = spriteLocations[random.nextInt(spriteLocations.length)];
+      } else {
+        location = null;
+      }
+
       final Rect sourceRect;
-      if (spriteRects != null && spriteRects.isNotEmpty) {
-        sourceRect = spriteRects[random.nextInt(spriteRects.length)];
+      final bool rotated;
+      if (location != null) {
+        sourceRect = location.sprite.sourceRect;
+        rotated = location.rotated;
       } else {
         final imageWidth = atlas.image.width.toDouble();
         final imageHeight = atlas.image.height.toDouble();
         sourceRect = Rect.fromLTWH(0, 0, imageWidth, imageHeight);
+        rotated = false;
       }
 
       final entity = widget.world.createSpriteShaderEntity(
         content: content,
-        spriteRect: SpriteRectComponent(sourceRect: sourceRect),
+        spriteRect: SpriteRectComponent(sourceRect: sourceRect, rotated: rotated),
         boundsWidth: _lastSize.width,
         boundsHeight: _lastSize.height,
         spriteSize: widget.spriteSize.toDouble(),

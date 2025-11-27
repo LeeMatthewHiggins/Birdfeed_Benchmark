@@ -91,10 +91,15 @@ class SpriteTextureEncoder {
           pixels[pixelBase + 6] = atlasY & 0xFF;
           pixels[pixelBase + 7] = atlasY >> 8;
 
+          final rotationFlag =
+              sprite.rotated ? MegaSpriteConfig.rotationBitMask : 0;
+          final effectBits = (sprite.effect.value & 0x07)
+              << MegaSpriteConfig.effectBitShift;
+
           pixels[pixelBase + 8] = atlasWidth & 0xFF;
-          pixels[pixelBase + 9] = atlasWidth >> 8;
+          pixels[pixelBase + 9] = ((atlasWidth >> 8) & 0x1F) | rotationFlag;
           pixels[pixelBase + 10] = atlasHeight & 0xFF;
-          pixels[pixelBase + 11] = atlasHeight >> 8;
+          pixels[pixelBase + 11] = ((atlasHeight >> 8) & 0x1F) | effectBits;
 
           encodedCount++;
         }

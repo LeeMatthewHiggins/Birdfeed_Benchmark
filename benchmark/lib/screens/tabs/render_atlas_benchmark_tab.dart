@@ -29,16 +29,17 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
 
   int _instanceCount = 100;
   String? _loadedFileName;
+  bool _isGenerating = false;
+  AtlasBuildProgress? _buildProgress;
 
   @override
   void dispose() {
     _world.dispose();
-    _spriteShaderService.dispose();
     super.dispose();
   }
 
   Future<bool> _handleFileDropped(List<int> bytes, String fileName) async {
-    final success = await _spriteShaderService.loadImageFile(
+    final success = await _spriteShaderService.loadFile(
       Uint8List.fromList(bytes),
       fileName,
     );
@@ -54,13 +55,36 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
   }
 
   Future<void> _handleGenerateEmojiAtlas() async {
-    final success = await _spriteShaderService.generateEmojiAtlas();
+    setState(() {
+      _isGenerating = true;
+      _buildProgress = null;
+    });
 
-    if (success && mounted) {
-      setState(() {
-        _loadedFileName = _spriteShaderService.loadedFileName;
-      });
-      widget.fpsTracker.reset();
+    try {
+      await for (final progress
+          in _spriteShaderService.generateEmojiAtlas()) {
+        if (mounted) {
+          setState(() {
+            _buildProgress = progress;
+          });
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _loadedFileName = _spriteShaderService.loadedFileName;
+          _isGenerating = false;
+          _buildProgress = null;
+        });
+        widget.fpsTracker.reset();
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+          _buildProgress = null;
+        });
+      }
     }
   }
 
@@ -89,15 +113,26 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
                   '.gif',
                   '.bmp',
                   '.wbmp',
+                  '.zip',
                 ],
                 fileName: _loadedFileName,
               ),
             ),
             const SizedBox(width: 16),
             ElevatedButton.icon(
-              onPressed: _handleGenerateEmojiAtlas,
-              icon: const Icon(Icons.emoji_emotions),
-              label: const Text('Generate Emoji Atlas'),
+              onPressed: _isGenerating ? null : _handleGenerateEmojiAtlas,
+              icon: _isGenerating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.emoji_emotions),
+              label: Text(
+                _isGenerating
+                    ? _buildProgress?.message ?? 'Building...'
+                    : 'Generate Emoji Atlas',
+              ),
             ),
           ],
         ),
@@ -137,7 +172,7 @@ class _RenderAtlasBenchmarkTabState extends State<RenderAtlasBenchmarkTab> {
                 fpsTracker: widget.fpsTracker,
                 spriteSize: 64,
                 painterType: MegaSpritePainterType.atlas,
-                spriteRects: _spriteShaderService.spriteRects,
+                spriteLocations: _spriteShaderService.spriteLocations,
               )
             else
               const Center(

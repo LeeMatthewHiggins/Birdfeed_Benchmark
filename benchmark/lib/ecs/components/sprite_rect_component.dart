@@ -5,13 +5,16 @@ import 'package:dentity/dentity.dart';
 final class SpriteRectComponent extends Component {
   SpriteRectComponent({
     required this.sourceRect,
+    this.rotated = false,
   });
 
   final Rect sourceRect;
+  final bool rotated;
 
   @override
   SpriteRectComponent clone() => SpriteRectComponent(
         sourceRect: sourceRect,
+        rotated: rotated,
       );
 
   @override
