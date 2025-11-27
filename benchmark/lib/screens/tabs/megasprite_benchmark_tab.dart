@@ -11,8 +11,8 @@ import 'package:benchmark/widgets/megasprite_renderer.dart';
 import 'package:flutter/material.dart';
 import 'package:megasprite/megasprite.dart';
 
-class SpriteShaderBenchmarkTab extends StatefulWidget {
-  const SpriteShaderBenchmarkTab({
+class MegaSpriteBenchmarkTab extends StatefulWidget {
+  const MegaSpriteBenchmarkTab({
     required this.fpsTracker,
     super.key,
   });
@@ -20,11 +20,10 @@ class SpriteShaderBenchmarkTab extends StatefulWidget {
   final FpsTracker fpsTracker;
 
   @override
-  State<SpriteShaderBenchmarkTab> createState() =>
-      _SpriteShaderBenchmarkTabState();
+  State<MegaSpriteBenchmarkTab> createState() => _MegaSpriteBenchmarkTabState();
 }
 
-class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
+class _MegaSpriteBenchmarkTabState extends State<MegaSpriteBenchmarkTab> {
   final _spriteShaderService = SpriteShaderBenchmarkService();
   final _world = BenchmarkWorld();
 
@@ -34,6 +33,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
   String? _loadedFileName;
   bool _isGenerating = false;
   AtlasBuildProgress? _buildProgress;
+  MegaSpritePainterType _painterType = MegaSpritePainterType.shader;
 
   @override
   void dispose() {
@@ -105,6 +105,14 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
     widget.fpsTracker.reset();
   }
 
+  void _handlePainterTypeChanged(MegaSpritePainterType? type) {
+    if (type == null) return;
+    setState(() {
+      _painterType = type;
+    });
+    widget.fpsTracker.reset();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -147,34 +155,49 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
           ],
         ),
         const SizedBox(height: 16),
-        InstanceCountSlider(
-          instanceCount: _instanceCount,
-          onChanged: _handleInstanceCountChanged,
-        ),
-        const SizedBox(height: 16),
-        CellSizeSlider(
-          cellSize: _cellSize,
-          onChanged: _handleCellSizeChanged,
+        Row(
+          children: [
+            Expanded(
+              child: InstanceCountSlider(
+                instanceCount: _instanceCount,
+                onChanged: _handleInstanceCountChanged,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            const Text(
-              'Debug Overlay:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            _RenderTypeSelector(
+              painterType: _painterType,
+              onChanged: _handlePainterTypeChanged,
+            ),
+            const SizedBox(width: 24),
+            if (_painterType == MegaSpritePainterType.shader) ...[
+              Expanded(
+                child: CellSizeSlider(
+                  cellSize: _cellSize,
+                  onChanged: _handleCellSizeChanged,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Switch(
-              value: _showDebugOverlay,
-              onChanged: (value) {
-                setState(() {
-                  _showDebugOverlay = value;
-                });
-              },
-            ),
+              const SizedBox(width: 24),
+              const Text(
+                'Debug Overlay:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Switch(
+                value: _showDebugOverlay,
+                onChanged: (value) {
+                  setState(() {
+                    _showDebugOverlay = value;
+                  });
+                },
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 16),
@@ -200,7 +223,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
           children: [
             if (_spriteShaderService.hasLoadedFile)
               MegaSpriteRenderer(
-                key: ValueKey(_loadedFileName),
+                key: ValueKey('$_loadedFileName-$_painterType'),
                 instanceCount: _instanceCount,
                 world: _world,
                 atlas: _spriteShaderService.atlas,
@@ -209,6 +232,7 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
                 cellSize: _cellSize,
                 showDebugOverlay: _showDebugOverlay,
                 spriteSize: 64,
+                painterType: _painterType,
                 spriteLocations: _spriteShaderService.spriteLocations,
               )
             else
@@ -225,6 +249,49 @@ class _SpriteShaderBenchmarkTabState extends State<SpriteShaderBenchmarkTab> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RenderTypeSelector extends StatelessWidget {
+  const _RenderTypeSelector({
+    required this.painterType,
+    required this.onChanged,
+  });
+
+  final MegaSpritePainterType painterType;
+  final ValueChanged<MegaSpritePainterType?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Render Type:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 12),
+        SegmentedButton<MegaSpritePainterType>(
+          segments: const [
+            ButtonSegment(
+              value: MegaSpritePainterType.shader,
+              label: Text('Shader'),
+              icon: Icon(Icons.auto_awesome),
+            ),
+            ButtonSegment(
+              value: MegaSpritePainterType.atlas,
+              label: Text('Atlas'),
+              icon: Icon(Icons.grid_view),
+            ),
+          ],
+          selected: {painterType},
+          onSelectionChanged: (selected) => onChanged(selected.first),
+        ),
+      ],
     );
   }
 }
