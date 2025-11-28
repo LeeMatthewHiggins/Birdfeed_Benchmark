@@ -6,7 +6,6 @@ import 'package:atlas_creator/services/atlas_creator_service.dart';
 import 'package:atlas_creator/widgets/atlas_preview_panel.dart';
 import 'package:atlas_creator/widgets/atlas_settings_panel.dart';
 import 'package:atlas_creator/widgets/export_dialog.dart';
-import 'package:atlas_creator/widgets/sprite_drop_zone.dart';
 import 'package:atlas_creator/widgets/sprite_file_tree.dart';
 import 'package:atlas_creator/widgets/sprite_info_panel.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +33,7 @@ class _AtlasCreatorScreenState extends State<AtlasCreatorScreen> {
   bool _allowRotation = true;
   int _trimTolerance = 0;
   PackingAlgorithm _packingAlgorithm = PackingAlgorithm.maxRectsBssf;
+  double _scalePercent = 100;
 
   Future<void> _onSpritesAdded(List<SpriteEntry> entries) async {
     setState(() {
@@ -55,9 +55,12 @@ class _AtlasCreatorScreenState extends State<AtlasCreatorScreen> {
     });
   }
 
-  void _onFolderDeleted(String folderName) {
+  void _onFolderDeleted(String folderName, List<SpriteEntry> spritesInFolder) {
     setState(() {
       _emptyFolders.remove(folderName);
+      for (final sprite in spritesInFolder) {
+        _sprites.remove(sprite);
+      }
     });
   }
 
@@ -98,6 +101,7 @@ class _AtlasCreatorScreenState extends State<AtlasCreatorScreen> {
         allowRotation: _allowRotation,
         trimTolerance: _trimTolerance,
         packingAlgorithm: _packingAlgorithm,
+        scalePercent: _scalePercent,
       );
 
       await for (final progress in progressStream) {
@@ -181,19 +185,17 @@ class _AtlasCreatorScreenState extends State<AtlasCreatorScreen> {
             child: Column(
               children: [
                 Expanded(
-                  child: _sprites.isEmpty
-                      ? SpriteDropZone(onSpritesAdded: _onSpritesAdded)
-                      : SpriteFileTree(
-                          sprites: _sprites,
-                          selectionController: _selectionController,
-                          onSpriteRemoved: _onSpriteRemoved,
-                          onSpritesAdded: _onSpritesAdded,
-                          emptyFolders: _emptyFolders,
-                          onFolderCreated: _onFolderCreated,
-                          onFolderDeleted: _onFolderDeleted,
-                        ),
+                  child: SpriteFileTree(
+                    sprites: _sprites,
+                    selectionController: _selectionController,
+                    onSpriteRemoved: _onSpriteRemoved,
+                    onSpritesAdded: _onSpritesAdded,
+                    emptyFolders: _emptyFolders,
+                    onFolderCreated: _onFolderCreated,
+                    onFolderDeleted: _onFolderDeleted,
+                  ),
                 ),
-                if (_sprites.isNotEmpty)
+                if (_sprites.isNotEmpty || _emptyFolders.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: Row(
@@ -242,12 +244,14 @@ class _AtlasCreatorScreenState extends State<AtlasCreatorScreen> {
                   allowRotation: _allowRotation,
                   trimTolerance: _trimTolerance,
                   packingAlgorithm: _packingAlgorithm,
+                  scalePercent: _scalePercent,
                   canBuild: _sprites.isNotEmpty && !_isBuilding,
                   onSizePresetChanged: (value) => setState(() => _sizePreset = value),
                   onPaddingChanged: (value) => setState(() => _padding = value),
                   onAllowRotationChanged: (value) => setState(() => _allowRotation = value),
                   onTrimToleranceChanged: (value) => setState(() => _trimTolerance = value),
                   onPackingAlgorithmChanged: (value) => setState(() => _packingAlgorithm = value),
+                  onScalePercentChanged: (value) => setState(() => _scalePercent = value),
                   onBuild: _buildAtlas,
                 ),
               ],

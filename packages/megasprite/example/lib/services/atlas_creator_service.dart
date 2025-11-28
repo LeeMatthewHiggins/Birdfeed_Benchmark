@@ -17,6 +17,7 @@ class AtlasCreatorService {
     required bool allowRotation,
     required int trimTolerance,
     required PackingAlgorithm packingAlgorithm,
+    required double scalePercent,
   }) {
     _builder = IsolateAtlasBuilder(
       sizePreset: sizePreset,
@@ -24,6 +25,7 @@ class AtlasCreatorService {
       allowRotation: allowRotation,
       trimTolerance: trimTolerance,
       packingAlgorithm: packingAlgorithm,
+      scalePercent: scalePercent,
     );
 
     return _builder!.buildWithProgress(sprites);

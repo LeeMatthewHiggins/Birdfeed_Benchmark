@@ -9,27 +9,37 @@ class AtlasSettingsPanel extends StatelessWidget {
     required this.allowRotation,
     required this.trimTolerance,
     required this.packingAlgorithm,
+    required this.scalePercent,
     required this.canBuild,
     required this.onSizePresetChanged,
     required this.onPaddingChanged,
     required this.onAllowRotationChanged,
     required this.onTrimToleranceChanged,
     required this.onPackingAlgorithmChanged,
+    required this.onScalePercentChanged,
     required this.onBuild,
     super.key,
   });
+
+  static const _scaleOptions = [5.0, 12.5, 25.0, 50.0, 75.0, 100.0];
+
+  static String _formatPercent(double value) {
+    return value == value.truncateToDouble() ? '${value.toInt()}%' : '$value%';
+  }
 
   final AtlasSizePreset sizePreset;
   final int padding;
   final bool allowRotation;
   final int trimTolerance;
   final PackingAlgorithm packingAlgorithm;
+  final double scalePercent;
   final bool canBuild;
   final void Function(AtlasSizePreset) onSizePresetChanged;
   final void Function(int) onPaddingChanged;
   final ValueChanged<bool> onAllowRotationChanged;
   final void Function(int) onTrimToleranceChanged;
   final void Function(PackingAlgorithm) onPackingAlgorithmChanged;
+  final ValueChanged<double> onScalePercentChanged;
   final VoidCallback onBuild;
 
   static const _webSupportedPresets = [
@@ -172,6 +182,24 @@ class AtlasSettingsPanel extends StatelessWidget {
               }).toList(),
               onChanged: (value) {
                 if (value != null) onPackingAlgorithmChanged(value);
+              },
+            ),
+          ),
+          const SizedBox(width: 24),
+          _SettingItem(
+            label: 'Scale',
+            child: DropdownButton<double>(
+              value: scalePercent,
+              underline: const SizedBox.shrink(),
+              isDense: true,
+              items: _scaleOptions.map((scale) {
+                return DropdownMenuItem(
+                  value: scale,
+                  child: Text(_formatPercent(scale)),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) onScalePercentChanged(value);
               },
             ),
           ),

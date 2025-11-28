@@ -25,7 +25,9 @@ class SpriteDropHandler {
       final name = file.name.toLowerCase();
 
       if (name.endsWith('.zip')) {
-        entries.addAll(await extractZip(bytes, folderPrefix: folderPrefix));
+        entries.addAll(
+          await extractZip(bytes, folderPrefix: folderPrefix),
+        );
       } else if (isImageFile(name)) {
         entries.add(
           SpriteEntry(
@@ -79,10 +81,11 @@ class SpriteDropHandler {
       for (final file in archive) {
         if (file.isFile && isImageFile(file.name.toLowerCase())) {
           final content = file.content as List<int>;
+          final imageBytes = Uint8List.fromList(content);
           entries.add(
             SpriteEntry(
               identifier: _buildIdentifier(file.name, folderPrefix),
-              bytes: Uint8List.fromList(content),
+              bytes: imageBytes,
             ),
           );
         }

@@ -22,7 +22,7 @@ class SpriteFileTree extends StatefulWidget {
   final void Function(List<SpriteEntry>) onSpritesAdded;
   final Set<String> emptyFolders;
   final void Function(String) onFolderCreated;
-  final void Function(String) onFolderDeleted;
+  final void Function(String folderName, List<SpriteEntry> spritesInFolder) onFolderDeleted;
 
   @override
   State<SpriteFileTree> createState() => _SpriteFileTreeState();
@@ -165,18 +165,16 @@ class _SpriteFileTreeState extends State<SpriteFileTree> {
                   final entry = groups.entries.elementAt(index);
                   final folder = entry.key;
                   final sprites = entry.value;
-                  final isEmpty = sprites.isEmpty;
 
                   return _FolderSection(
                     folder: folder,
                     sprites: sprites,
                     selectedSpriteId: selectedId,
-                    isEmpty: isEmpty,
                     onSpriteRemoved: widget.onSpriteRemoved,
                     onSpriteSelected: (id) =>
                         widget.selectionController.toggle(id ?? ''),
                     onSpritesDropped: widget.onSpritesAdded,
-                    onDelete: isEmpty ? () => widget.onFolderDeleted(folder) : null,
+                    onFolderDeleted: widget.onFolderDeleted,
                     dropHandler: _dropHandler,
                   );
                 },
@@ -196,20 +194,18 @@ class _FolderSection extends StatefulWidget {
     required this.onSpriteRemoved,
     required this.onSpriteSelected,
     required this.onSpritesDropped,
+    required this.onFolderDeleted,
     required this.dropHandler,
-    required this.isEmpty,
     this.selectedSpriteId,
-    this.onDelete,
   });
 
   final String folder;
   final List<SpriteEntry> sprites;
   final String? selectedSpriteId;
-  final bool isEmpty;
   final void Function(SpriteEntry) onSpriteRemoved;
   final void Function(String?) onSpriteSelected;
   final void Function(List<SpriteEntry>) onSpritesDropped;
-  final VoidCallback? onDelete;
+  final void Function(String, List<SpriteEntry>) onFolderDeleted;
   final SpriteDropHandler dropHandler;
 
   @override
@@ -219,6 +215,8 @@ class _FolderSection extends StatefulWidget {
 class _FolderSectionState extends State<_FolderSection> {
   bool _isExpanded = true;
   bool _isDraggingOver = false;
+
+  bool get _canDelete => widget.folder.isNotEmpty;
 
   @override
   void didUpdateWidget(_FolderSection oldWidget) {
@@ -241,6 +239,40 @@ class _FolderSectionState extends State<_FolderSection> {
     );
     if (entries.isNotEmpty) {
       widget.onSpritesDropped(entries);
+    }
+  }
+
+  Future<void> _showDeleteConfirmation() async {
+    final spriteCount = widget.sprites.length;
+    final folderName = widget.folder;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Folder'),
+        content: Text(
+          spriteCount == 0
+              ? 'Delete folder "$folderName"?'
+              : 'Delete folder "$folderName" and its $spriteCount sprite${spriteCount == 1 ? '' : 's'}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      widget.onFolderDeleted(widget.folder, widget.sprites);
     }
   }
 
@@ -284,32 +316,30 @@ class _FolderSectionState extends State<_FolderSection> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (widget.isEmpty && widget.onDelete != null)
+                    Text(
+                      '${widget.sprites.length}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.outline,
+                          ),
+                    ),
+                    const SizedBox(width: 4),
+                    if (_canDelete)
                       InkWell(
-                        onTap: widget.onDelete,
+                        onTap: _showDeleteConfirmation,
                         borderRadius: BorderRadius.circular(12),
                         child: Padding(
                           padding: const EdgeInsets.all(4),
                           child: Icon(
-                            Icons.close,
+                            Icons.delete_outline,
                             size: 16,
                             color: colorScheme.outline,
                           ),
                         ),
-                      )
-                    else ...[
-                      Text(
-                        '${widget.sprites.length}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.outline,
-                            ),
                       ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        _isExpanded ? Icons.expand_less : Icons.expand_more,
-                        size: 20,
-                      ),
-                    ],
+                    Icon(
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                    ),
                   ],
                 ),
               ),

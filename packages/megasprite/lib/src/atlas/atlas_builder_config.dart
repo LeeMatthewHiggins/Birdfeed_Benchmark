@@ -34,4 +34,5 @@ class AtlasBuilderConfig {
   static const int maxTrimTolerance = 128;
   static const PackingAlgorithm defaultPackingAlgorithm =
       PackingAlgorithm.maxRectsBssf;
+  static const double defaultScalePercent = 100;
 }

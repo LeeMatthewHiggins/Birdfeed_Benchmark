@@ -107,6 +107,7 @@ class IsolateAtlasBuilder {
     this.allowRotation = AtlasBuilderConfig.defaultAllowRotation,
     this.trimTolerance = AtlasBuilderConfig.defaultTrimTolerance,
     this.packingAlgorithm = AtlasBuilderConfig.defaultPackingAlgorithm,
+    this.scalePercent = AtlasBuilderConfig.defaultScalePercent,
   });
 
   final AtlasSizePreset sizePreset;
@@ -114,6 +115,7 @@ class IsolateAtlasBuilder {
   final bool allowRotation;
   final int trimTolerance;
   final PackingAlgorithm packingAlgorithm;
+  final double scalePercent;
 
   AtlasResult? _lastResult;
 
@@ -131,17 +133,30 @@ class IsolateAtlasBuilder {
     final decodedImages = <_DecodedImage>[];
     final identifiers = <String>[];
 
+    final needsScaling = scalePercent != 100;
+
     for (var i = 0; i < sprites.length; i++) {
       final sprite = sprites[i];
       try {
         final image = await _decodeImage(sprite.imageBytes);
         final byteData = await image.toByteData();
         if (byteData != null) {
+          var pixels = byteData.buffer.asUint8List();
+          var width = image.width;
+          var height = image.height;
+
+          if (needsScaling) {
+            final scaled = _scalePixels(pixels, width, height, scalePercent);
+            pixels = scaled.pixels;
+            width = scaled.width;
+            height = scaled.height;
+          }
+
           decodedImages.add(
             _DecodedImage(
-              pixels: byteData.buffer.asUint8List(),
-              width: image.width,
-              height: image.height,
+              pixels: pixels,
+              width: width,
+              height: height,
             ),
           );
           identifiers.add(sprite.identifier);
@@ -433,6 +448,56 @@ class _TrimResult {
   final Uint8List trimmedPixels;
   final TrimRect trimRect;
   final int pixelHash;
+}
+
+class _ScaleResult {
+  const _ScaleResult({
+    required this.pixels,
+    required this.width,
+    required this.height,
+  });
+
+  final Uint8List pixels;
+  final int width;
+  final int height;
+}
+
+_ScaleResult _scalePixels(
+  Uint8List pixels,
+  int width,
+  int height,
+  double scalePercent,
+) {
+  const bytesPerPixel = 4;
+  final scale = scalePercent / 100;
+  final newWidth = (width * scale).round();
+  final newHeight = (height * scale).round();
+
+  if (newWidth <= 0 || newHeight <= 0) {
+    return _ScaleResult(pixels: pixels, width: width, height: height);
+  }
+
+  final scaledPixels = Uint8List(newWidth * newHeight * bytesPerPixel);
+
+  for (var y = 0; y < newHeight; y++) {
+    final srcY = (y / scale).floor().clamp(0, height - 1);
+    for (var x = 0; x < newWidth; x++) {
+      final srcX = (x / scale).floor().clamp(0, width - 1);
+      final srcIndex = (srcY * width + srcX) * bytesPerPixel;
+      final dstIndex = (y * newWidth + x) * bytesPerPixel;
+
+      scaledPixels[dstIndex] = pixels[srcIndex];
+      scaledPixels[dstIndex + 1] = pixels[srcIndex + 1];
+      scaledPixels[dstIndex + 2] = pixels[srcIndex + 2];
+      scaledPixels[dstIndex + 3] = pixels[srcIndex + 3];
+    }
+  }
+
+  return _ScaleResult(
+    pixels: scaledPixels,
+    width: newWidth,
+    height: newHeight,
+  );
 }
 
 _TrimResult _trimImage(Uint8List pixels, int width, int height, int tolerance) {

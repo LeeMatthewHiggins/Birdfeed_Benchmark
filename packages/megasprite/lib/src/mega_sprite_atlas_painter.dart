@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -12,6 +13,10 @@ class MegaSpriteAtlasPainter extends CustomPainter {
     this.onBeforePaint,
     super.repaint,
   });
+
+  static const double _rotationAngle = -math.pi / 2;
+  static final double _rotationCos = math.cos(_rotationAngle);
+  static final double _rotationSin = math.sin(_rotationAngle);
 
   final VoidCallback? onBeforePaint;
 
@@ -43,14 +48,33 @@ class MegaSpriteAtlasPainter extends CustomPainter {
     var rIndex = 0;
 
     for (final sprite in sprites) {
-      final scale = sprite.rect.width / sprite.sourceRect.width;
-
-      _transforms[tIndex++] = scale;
-      _transforms[tIndex++] = 0;
-      _transforms[tIndex++] = sprite.rect.left;
-      _transforms[tIndex++] = sprite.rect.top;
-
       final src = sprite.sourceRect;
+
+      if (sprite.rotated) {
+        final scale = sprite.rect.width / src.height;
+        final scos = scale * _rotationCos;
+        final ssin = scale * _rotationSin;
+
+        final anchorX = src.width / 2;
+        final anchorY = src.height / 2;
+        final destCenterX = sprite.rect.left + sprite.rect.width / 2;
+        final destCenterY = sprite.rect.top + sprite.rect.height / 2;
+        final tx = destCenterX - scos * anchorX + ssin * anchorY;
+        final ty = destCenterY - ssin * anchorX - scos * anchorY;
+
+        _transforms[tIndex++] = scos;
+        _transforms[tIndex++] = ssin;
+        _transforms[tIndex++] = tx;
+        _transforms[tIndex++] = ty;
+      } else {
+        final scale = sprite.rect.width / src.width;
+
+        _transforms[tIndex++] = scale;
+        _transforms[tIndex++] = 0;
+        _transforms[tIndex++] = sprite.rect.left;
+        _transforms[tIndex++] = sprite.rect.top;
+      }
+
       _rects[rIndex++] = src.left;
       _rects[rIndex++] = src.top;
       _rects[rIndex++] = src.right;
