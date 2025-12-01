@@ -15,6 +15,8 @@ class SpriteData {
     this.originalWidth,
     this.originalHeight,
     this.rotated = false,
+    this.flipX = false,
+    this.flipY = false,
     this.effect = SpriteEffect.none,
   });
 
@@ -31,5 +33,7 @@ class SpriteData {
   final double? originalWidth;
   final double? originalHeight;
   final bool rotated;
+  final bool flipX;
+  final bool flipY;
   final SpriteEffect effect;
 }

@@ -5,6 +5,27 @@ import 'package:megasprite/src/config.dart';
 import 'package:megasprite/src/sprite_data.dart';
 import 'package:megasprite/src/texture_layout.dart';
 
+/// Encodes sprite data into texture pixels for GPU-based sprite rendering.
+///
+/// Each sprite uses 3 pixels (12 bytes) in the position data texture:
+///
+/// Pixel 0 (Position & Size):
+///   R: relative X position (signed byte + 128 offset)
+///   G: relative Y position (signed byte + 128 offset)
+///   B: sprite width (0-255)
+///   A: sprite height (0-255)
+///
+/// Pixel 1 (Atlas Position):
+///   R: atlas X low byte
+///   G: atlas X high byte
+///   B: atlas Y low byte
+///   A: atlas Y high byte
+///
+/// Pixel 2 (Atlas Size & Flags):
+///   R: atlas width low byte
+///   G: atlas width high byte [bits 0-4: high bits, bit 5: rotated, bit 6: flipX, bit 7: flipY]
+///   B: atlas height low byte
+///   A: atlas height high byte [bits 0-4: high bits, bits 5-7: effect]
 class SpriteTextureEncoder {
   SpriteTextureEncoder({
     required this.binner,
@@ -93,11 +114,14 @@ class SpriteTextureEncoder {
 
           final rotationFlag =
               sprite.rotated ? MegaSpriteConfig.rotationBitMask : 0;
+          final flipXFlag = sprite.flipX ? MegaSpriteConfig.flipXBitMask : 0;
+          final flipYFlag = sprite.flipY ? MegaSpriteConfig.flipYBitMask : 0;
           final effectBits = (sprite.effect.value & 0x07)
               << MegaSpriteConfig.effectBitShift;
 
           pixels[pixelBase + 8] = atlasWidth & 0xFF;
-          pixels[pixelBase + 9] = ((atlasWidth >> 8) & 0x1F) | rotationFlag;
+          pixels[pixelBase + 9] =
+              ((atlasWidth >> 8) & 0x1F) | rotationFlag | flipXFlag | flipYFlag;
           pixels[pixelBase + 10] = atlasHeight & 0xFF;
           pixels[pixelBase + 11] = ((atlasHeight >> 8) & 0x1F) | effectBits;
 

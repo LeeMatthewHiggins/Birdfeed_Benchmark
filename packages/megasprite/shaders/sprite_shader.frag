@@ -12,6 +12,8 @@ out vec4 fragColor;
 const int kMaxSpritesPerCell = 255;
 const float kSignedByteOffset = 128.0;
 const float kRotationBitMask = 32.0;
+const float kFlipXBitMask = 64.0;
+const float kFlipYBitMask = 128.0;
 const float kEffectBitShift = 5.0;
 const float kDimensionMask = 31.0;
 
@@ -58,8 +60,9 @@ void main() {
     float widthHighByte = floor(atlasSizeData.g * 255.0 + 0.5);
     float heightHighByte = floor(atlasSizeData.a * 255.0 + 0.5);
 
-    float rotationBits = mod(widthHighByte, 64.0);
-    bool rotated = rotationBits >= kRotationBitMask;
+    bool rotated = mod(widthHighByte, kFlipXBitMask) >= kRotationBitMask;
+    bool flipX = mod(widthHighByte, kFlipYBitMask) >= kFlipXBitMask;
+    bool flipY = widthHighByte >= kFlipYBitMask;
     float effect = floor(heightHighByte / kRotationBitMask);
 
     float widthLowByte = floor(atlasSizeData.r * 255.0 + 0.5);
@@ -87,6 +90,9 @@ void main() {
       vec2 spriteUV = vec2(0.5);
       if (spriteSize.x > 0.0) spriteUV.x = localPos.x / spriteSize.x;
       if (spriteSize.y > 0.0) spriteUV.y = localPos.y / spriteSize.y;
+
+      if (flipX) spriteUV.x = 1.0 - spriteUV.x;
+      if (flipY) spriteUV.y = 1.0 - spriteUV.y;
 
       vec2 atlasUV = rotated ? vec2(1.0 - spriteUV.y, spriteUV.x) : spriteUV;
       vec2 atlasPixel = atlasMin + atlasUV * atlasSize;
