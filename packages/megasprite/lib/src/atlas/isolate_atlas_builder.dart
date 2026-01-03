@@ -214,7 +214,7 @@ class IsolateAtlasBuilder {
       await _yieldToEventLoop();
     }
 
-    yield AtlasBuildProgress(
+    yield const AtlasBuildProgress(
       phase: AtlasBuildPhase.deduplicating,
       current: 0,
       total: 1,
@@ -222,7 +222,7 @@ class IsolateAtlasBuilder {
 
     final deduplicationResult = _deduplicateSprites(processedSprites);
 
-    yield AtlasBuildProgress(
+    yield const AtlasBuildProgress(
       phase: AtlasBuildPhase.deduplicating,
       current: 1,
       total: 1,
