@@ -2,7 +2,6 @@ name: birdfeed_benchmark
 
 packages:
   - benchmark
-  - packages/**
 
 command:
   bootstrap:

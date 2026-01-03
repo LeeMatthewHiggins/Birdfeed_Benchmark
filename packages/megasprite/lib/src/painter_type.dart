@@ -1,4 +1,0 @@
-enum MegaSpritePainterType {
-  shader,
-  atlas,
-}
